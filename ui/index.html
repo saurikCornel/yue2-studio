@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YuE2 Studio</title>
+<style>
+  :root{
+    --bg:#0a0a0c; --panel:#101014; --panel2:#15151a; --line:#232329;
+    --text:#e9e9ec; --muted:#8a8a94; --dim:#5f5f68; --accent:#d8a15c; --ok:#7fc8a0; --bad:#e07b6a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:13px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
+  /* sidebar */
+  .side{width:196px;flex:0 0 196px;background:var(--panel);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;padding:14px 10px}
+  .brand{display:flex;align-items:center;gap:7px;padding:4px 8px 16px;color:var(--muted);
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .brand i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:block}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav button{all:unset;cursor:pointer;padding:8px 10px;border-radius:7px;color:var(--muted);
+    font-size:13px;display:flex;gap:9px;align-items:center}
+  .nav button:hover{background:var(--panel2);color:var(--text)}
+  .nav button.on{background:var(--panel2);color:var(--text);box-shadow:inset 2px 0 0 var(--accent)}
+  .nav svg{width:14px;height:14px;flex:0 0 14px;opacity:.8}
+  .side .foot{margin-top:auto;padding:8px;color:var(--dim);font-size:11px;line-height:1.6}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--dim);margin-right:5px}
+  .dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)} .dot.warn{background:var(--accent)}
+  /* main */
+  main{flex:1;overflow:auto;padding:22px 26px 40px}
+  h1{font-size:15px;font-weight:600;margin:0 0 2px}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:minmax(340px,1fr) minmax(300px,420px);gap:22px;align-items:start}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px}
+  .card h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 12px;font-weight:600}
+  label{display:block;color:var(--muted);font-size:11px;margin:12px 0 5px;letter-spacing:.04em}
+  label:first-child{margin-top:0}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;padding:8px 10px;font:inherit;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#33333c}
+  textarea{resize:vertical}
+  #lyrics{min-height:230px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.65}
+  .row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+  .btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  button.primary{all:unset;cursor:pointer;background:var(--accent);color:#1a1208;font-weight:600;
+    padding:9px 16px;border-radius:8px;text-align:center}
+  button.primary:hover{filter:brightness(1.07)}
+  button.primary[disabled]{opacity:.45;cursor:default;filter:none}
+  button.ghost{all:unset;cursor:pointer;border:1px solid var(--line);color:var(--muted);padding:8px 12px;
+    border-radius:8px;font-size:12px}
+  button.ghost:hover{color:var(--text);border-color:#33333c}
+  button.mini{all:unset;cursor:pointer;color:var(--dim);font-size:11px;padding:3px 7px;border-radius:6px;
+    border:1px solid var(--line)}
+  button.mini:hover{color:var(--text)}
+  .status{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:13px}
+  .phase{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-bottom:8px}
+  .bar{height:4px;background:#1d1d23;border-radius:3px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s ease}
+  .meta{margin-top:9px;color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
+  pre.log{margin:12px 0 0;background:#0c0c0f;border:1px solid var(--line);border-radius:8px;
+    padding:10px;max-height:170px;overflow:auto;color:#7f7f89;font-size:11px;white-space:pre-wrap;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .player{width:100%;margin-top:12px}
+  .empty{color:var(--dim);font-size:12px;padding:14px 0}
+  /* library */
+  .songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .song{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px}
+  .song h3{margin:0 0 4px;font-size:13px;font-weight:600}
+  .song .style{color:var(--dim);font-size:11px;margin-bottom:8px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .song .tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .tag{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 8px}
+  .tag.bad{color:var(--bad);border-color:#3a2320}
+  .drop{border:1px dashed #2c2c34;border-radius:10px;padding:20px;text-align:center;color:var(--dim);
+    font-size:12px;cursor:pointer}
+  .drop.hot{border-color:var(--accent);color:var(--text)}
+  .abc{font-family:ui-monospace,Menlo,monospace;font-size:11px;white-space:pre-wrap;color:#9a9aa4;
+    max-height:200px;overflow:auto;background:#0c0c0f;border:1px solid var(--line);border-radius:8px;padding:10px}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:6px 12px;font-size:12px}
+  .kv div:nth-child(odd){color:var(--dim)}
+  .hide{display:none}
+  audio{outline:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><i></i>YuE2 Studio</div>
+    <nav class="nav" id="nav">
+      <button data-view="create" class="on">Crear</button>
+      <button data-view="cover">Cover</button>
+      <button data-view="library">Biblioteca</button>
+      <button data-view="settings">Ajustes</button>
+    </nav>
+    <div class="foot" id="health">…</div>
+  </aside>
+  <main>
+    <!-- CREAR -->
+    <section id="view-create">
+      <h1>Crear canción</h1>
+      <div class="sub">letra + estilo → partitura editable → audio 48 kHz</div>
+      <div class="grid">
+        <div class="card">
+          <h2>Brief</h2>
+          <label>Estilo (prompt)</label>
+          <textarea id="style" rows="2">Argentine rock nacional, Spanish male lead vocal, jangly electric guitars, live bass and drums, mid tempo 92 BPM, big anthemic chorus</textarea>
+          <label>Letra</label>
+          <textarea id="lyrics">[Verso 1]
+Se apagó la radio del vecino
+y en el patio hay olor a lluvia
+me dejaste el mate y el cuaderno
+y una lista de canciones sin final
+
+[Estribillo]
+Bailá conmigo hasta que salga el sol
+que la noche sabe de los dos
+si el mundo se hace grande, morena
+volvé a mi barrio, volvé a mi voz</textarea>
+          <div class="row">
+            <div><label>Modo</label>
+              <select id="mode">
+                <option value="full">full · melodía + armonía</option>
+                <option value="melody">melody · sin acordes</option>
+                <option value="off">off · directo</option>
+              </select></div>
+            <div><label>Pasos</label>
+              <select id="steps">
+                <option value="32">32 · estándar</option>
+                <option value="8">8 · rápido</option>
+                <option value="16">16 · intermedio</option>
+              </select></div>
+            <div><label>Semilla</label><input id="seed" type="number" value="0"></div>
+            <div><button class="ghost" id="dice">aleatoria</button></div>
+          </div>
+          <div class="btns">
+            <button class="primary" id="go">Generar</button>
+            <button class="ghost" id="cancel" disabled>Cancelar</button>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h2>Estado</h2>
+            <div class="status">
+              <div class="phase"><span id="phase">en espera</span><span id="pct">0%</span></div>
+              <div class="bar"><i id="bar"></i></div>
+              <div class="meta" id="jobmeta">—</div>
+            </div>
+            <div id="result" class="hide">
+              <audio class="player" id="player" controls preload="none"></audio>
+              <div class="btns">
+                <button class="ghost" id="mp3">Exportar MP3</button>
+                <button class="ghost" id="findr">Mostrar en Finder</button>
+                <button class="ghost" id="showabc">Partitura</button>
+              </div>
+            </div>
+            <pre class="log hide" id="log"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COVER -->
+    <section id="view-cover" class="hide">
+      <h1>Cover</h1>
+      <div class="sub">transcribe una grabación y vuelve a sonar en otro estilo</div>
+      <div class="grid">
+        <div class="card">
+          <h2>1 · fuente</h2>
+          <div class="drop" id="drop">arrastrá un audio acá o hacé clic para elegirlo</div>
+          <input type="file" id="file" accept="audio/*" class="hide">
+          <div class="btns">
+            <button class="primary" id="doTranscribe">Transcribir</button>
+            <span id="srcname" class="sub" style="margin:0"></span>
+          </div>
+          <label>Melodía detectada (ABC)</label>
+          <div class="abc" id="abcPreview">—</div>
+          <h2 style="margin-top:18px">2 · nuevo estilo</h2>
+          <label>Estilo</label>
+          <textarea id="cStyle" rows="2">Jazz-funk, warm lead vocal, Rhodes piano, electric bass, tight drums</textarea>
+          <label>Letra</label>
+          <textarea id="cLyrics" rows="6">[Verso]
+Bailá conmigo hasta que salga el sol
+que la noche sabe de los dos
+[Estribillo]
+volvé a mi barrio, volvé a mi voz</textarea>
+          <div class="row">
+            <div><label>Tarea</label>
+              <select id="cTask">
+                <option value="melody-full">melody-full</option>
+                <option value="melody-vocal">melody-vocal</option>
+                <option value="full">full</option>
+              </select></div>
+            <div><label>Modo</label>
+              <select id="cMode"><option value="melody">melody</option><option value="full">full</option></select></div>
+            <div><label>Semilla</label><input id="cSeed" type="number" value="0"></div>
+            <div><button class="ghost" id="cGo">Generar cover</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h2>Estado</h2>
+            <div class="status">
+              <div class="phase"><span id="cPhase">en espera</span><span id="cPct">0%</span></div>
+              <div class="bar"><i id="cBar"></i></div>
+              <div class="meta" id="cMeta">—</div>
+            </div>
+            <div id="cResult" class="hide">
+              <audio class="player" id="cPlayer" controls preload="none"></audio>
+              <div class="btns"><button class="ghost" id="cFindr">Mostrar en Finder</button></div>
+            </div>
+            <pre class="log hide" id="cLog"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BIBLIOTECA -->
+    <section id="view-library" class="hide">
+      <h1>Biblioteca</h1>
+      <div class="sub" id="libSub">—</div>
+      <div class="songs" id="songs"></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section id="view-settings" class="hide">
+      <h1>Ajustes</h1>
+      <div class="sub">rutas y límites del motor</div>
+      <div class="card" style="max-width:620px">
+        <h2>Motor</h2>
+        <div class="kv" id="env"></div>
+        <label>Proyecto mlx-Yue</label>
+        <input id="sProject">
+        <div class="row" style="grid-template-columns:1fr 1fr">
+          <div><label>vae-core-frames</label><input id="sFrames" type="number"></div>
+          <div><label>precisión por defecto</label>
+            <select id="sPrecision"><option value="8bit">8bit</option><option value="bf16">bf16</option></select></div>
+        </div>
+        <div class="btns"><button class="primary" id="saveCfg">Guardar</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const api = async (path, opts) => {
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+};
+const fmtTime = (s) => s ? `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}` : "—";
+
+/* ---------- navegación ---------- */
+$("nav").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b === btn));
+  ["create","cover","library","settings"].forEach(v =>
+    $("view-" + v).classList.toggle("hide", v !== btn.dataset.view));
+  if (btn.dataset.view === "library") loadLibrary();
+  if (btn.dataset.view === "settings") loadSettings();
+});
+
+/* ---------- estado del motor ---------- */
+async function loadHealth(){
+  try{
+    const h = await api("/api/health");
+    const ok = h.cli_ok && h.models_ok && h.vae_ok;
+    $("health").innerHTML =
+      `<div><span class="dot ${ok?"ok":"bad"}"></span>${ok?"motor listo":"motor incompleto"}</div>
+       <div><span class="dot ${h.power.ac===true?"ok":"warn"}"></span>${h.power.ac===true?"enchufado":"a batería"}</div>
+       <div style="margin-top:6px">${h.disk_free_gb ?? "?"} GB libres</div>`;
+    window.__health = h;
+  }catch(e){ $("health").innerHTML = `<span class="dot bad"></span>sin conexión`; }
+}
+
+/* ---------- crear ---------- */
+let activeJob = null, pollTimer = null;
+function watch(jobId, ui){
+  activeJob = jobId;
+  ui.cancel.disabled = false; ui.go.disabled = true;
+  const tick = async () => {
+    let job;
+    try { job = await api("/api/jobs/" + jobId); } catch(e){ return; }
+    const pct = Math.round((job.progress || 0) * 100);
+    ui.bar.style.width = pct + "%";
+    ui.pct.textContent = pct + "%";
+    ui.phase.textContent = job.phase + (job.state === "queued" ? ` (cola ${job.queue_position})` : "");
+    const bits = [];
+    if (job.seconds) bits.push(job.seconds + " s");
+    if (job.steps) bits.push(`pasos ${job.steps[0]}/${job.steps[1]}`);
+    if (job.result && job.result.audio_seconds) bits.push("audio " + fmtTime(job.result.audio_seconds));
+    ui.meta.textContent = bits.join("  ·  ") || "—";
+    if (job.log_tail && job.log_tail.length){
+      ui.log.classList.remove("hide");
+      ui.log.textContent = job.log_tail.slice(-18).join("\n");
+      ui.log.scrollTop = ui.log.scrollHeight;
+    }
+    if (job.state === "running" || job.state === "queued"){
+      pollTimer = setTimeout(tick, 1500);
+    } else {
+      ui.cancel.disabled = true; ui.go.disabled = false;
+      if (job.state === "done" && job.result && job.result.audio){
+        ui.phase.textContent = "listo";
+        ui.result.classList.remove("hide");
+        ui.player.src = job.result.audio_url || `/files/outputs/${job.output_name}/audio.flac`;
+        ui.findr.onclick = () => api(`/api/library/${encodeURIComponent(job.output_name)}/reveal`, {method:"POST"});
+        ui.mp3.onclick = async () => {
+          const r = await api(`/api/library/${encodeURIComponent(job.output_name)}/mp3`, {method:"POST"});
+          window.open(r.mp3, "_blank");
+        };
+        ui.showabc.onclick = () => showAbc(job.result.abc_url || `/files/outputs/${job.output_name}/score.abc`);
+        loadLibrary();
+      } else if (job.state === "failed"){
+        ui.phase.textContent = "error";
+        ui.meta.textContent = job.error || "falló";
+      } else if (job.state === "cancelled"){
+        ui.phase.textContent = "cancelado";
+      }
+    }
+  };
+  tick();
+}
+$("go").onclick = async () => {
+  try{
+    const body = {
+      style: $("style").value, lyrics: $("lyrics").value, mode: $("mode").value,
+      steps: parseInt($("steps").value, 10), seed: parseInt($("seed").value || "0", 10),
+    };
+    const { job } = await api("/api/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
+    watch(job.id, {go:$("go"), cancel:$("cancel"), bar:$("bar"), pct:$("pct"), phase:$("phase"),
+                   meta:$("jobmeta"), log:$("log"), result:$("result"), player:$("player"),
+                   mp3:$("mp3"), findr:$("findr"), showabc:$("showabc")});
+  }catch(e){ $("phase").textContent = "error"; $("jobmeta").textContent = e.message; }
+};
+$("cancel").onclick = async () => { if (activeJob) await api(`/api/jobs/${activeJob}/cancel`, {method:"POST"}); };
+$("dice").onclick = () => { $("seed").value = Math.floor(Math.random()*9000000); };
+
+async function showAbc(url){
+  const res = await fetch(url);
+  const text = await res.text();
+  const w = window.open("", "_blank");
+  w.document.write("<pre style='font:12px ui-monospace,Menlo,monospace;white-space:pre-wrap;padding:18px'>"
+    + text.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])) + "</pre>");
+}
+
+/* ---------- cover ---------- */
+let coverAudio = null;
+const drop = $("drop"), fileInput = $("file");
+drop.onclick = () => fileInput.click();
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("hot"); };
+drop.ondragleave = () => drop.classList.remove("hot");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("hot"); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
+fileInput.onchange = () => { if (fileInput.files[0]) upload(fileInput.files[0]); };
+async function upload(file){
+  drop.textContent = "subiendo " + file.name + "…";
+  const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name), {method:"POST", body:file});
+  const data = await res.json();
+  coverAudio = data.path;
+  drop.textContent = file.name;
+  $("srcname").textContent = (data.bytes/1e6).toFixed(1) + " MB";
+}
+$("doTranscribe").onclick = async () => {
+  if (!coverAudio) return $("abcPreview").textContent = "elegí un audio primero";
+  tap("cPhase","cPct","cBar","cMeta","cLog");
+  const { job } = await api("/api/transcribe", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({audio: coverAudio, task: $("cTask").value, max_seconds: 180})});
+  watchCover(job.id, async () => {
+    const rel = `outputs/${job.output_name}/score.abc`;
+    const r = await fetch("/api/abc?path=" + encodeURIComponent(rel));
+    $("abcPreview").textContent = r.ok ? (await r.text()).slice(0, 4000) : "sin partitura";
+  });
+};
+$("cGo").onclick = async () => {
+  if (!coverAudio) return $("cMeta").textContent = "elegí un audio primero";
+  try{
+    tap("cPhase","cPct","cBar","cMeta","cLog");
+    const { job } = await api("/api/cover", {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({audio: coverAudio, style: $("cStyle").value, lyrics: $("cLyrics").value,
+        mode: $("cMode").value, task: $("cTask").value, seed: parseInt($("cSeed").value || "0", 10), steps: 32})});
+    watchCover(job.id, () => {
+      $("cResult").classList.remove("hide");
+      let url = job.result && job.result.audio_url ? job.result.audio_url : `/files/outputs/${job.output_name}/audio.flac`;
+      $("cPlayer").src = url;
+      $("cFindr").onclick = () => api(`/api/library/${encodeURIComponent(job.output_name)}/reveal`, {method:"POST"});
+      loadLibrary();
+    });
+  }catch(e){ $("cMeta").textContent = e.message; }
+};
+function tap(p,pct,bar,meta,log){
+  $(p).textContent = "enviado"; $(pct).textContent = "0%"; $(bar).style.width = "0%";
+  $(meta).textContent = "—"; $(log).classList.add("hide"); $(log).textContent = "";
+}
+function watchCover(jobId, done){
+  const tick = async () => {
+    let job;
+    try { job = await api("/api/jobs/" + jobId); } catch(e){ return; }
+    const pct = Math.round((job.progress||0)*100);
+    $("cBar").style.width = pct + "%"; $("cPct").textContent = pct + "%";
+    $("cPhase").textContent = job.phase;
+    const bits = [];
+    if (job.seconds) bits.push(job.seconds + " s");
+    if (job.result && job.result.audio_seconds) bits.push("audio " + fmtTime(job.result.audio_seconds));
+    $("cMeta").textContent = bits.join("  ·  ") || "—";
+    if (job.log_tail && job.log_tail.length){
+      $("cLog").classList.remove("hide");
+      $("cLog").textContent = job.log_tail.slice(-16).join("\n");
+      $("cLog").scrollTop = $("cLog").scrollHeight;
+    }
+    if (job.state === "running" || job.state === "queued") setTimeout(tick, 1500);
+    else if (job.state === "done") done && done(job);
+    else if (job.state === "failed") $("cMeta").textContent = job.error || "falló";
+  };
+  tick();
+}
+
+/* ---------- biblioteca ---------- */
+async function loadLibrary(){
+  const { songs } = await api("/api/library");
+  $("libSub").textContent = songs.length ? `${songs.length} canciones en outputs/` : "todavía no hay nada";
+  window.s_abc = {};
+  songs.forEach(s => { if (s.abc) window.s_abc[s.name] = s.abc; });
+  $("songs").innerHTML = songs.map(s => `
+    <div class="song" data-name="${s.name}">
+      <h3>${s.name}</h3>
+      <div class="style">${(s.style || "—").replace(/[<>]/g,"")}</div>
+      <div class="tags">
+        <span class="tag">${fmtTime(s.audio_seconds)}</span>
+        <span class="tag">${s.mode || "?"}</span>
+        ${s.seed !== undefined ? `<span class="tag">seed ${s.seed}</span>` : ""}
+        ${s.status && s.status !== "complete" ? `<span class="tag bad">${s.status}</span>` : ""}
+      </div>
+      ${s.audio ? `<audio controls preload="none" src="${s.audio}"></audio>` : `<div class="empty">sin audio</div>`}
+      <div class="btns">
+        <button class="mini" data-act="mp3">MP3</button>
+        <button class="mini" data-act="reveal">Finder</button>
+        ${s.abc ? `<button class="mini" data-act="abc">Partitura</button>` : ""}
+        <button class="mini" data-act="del">Borrar</button>
+      </div>
+    </div>`).join("");
+  $("songs").querySelectorAll(".song").forEach(card => {
+    const name = card.dataset.name;
+    card.querySelectorAll("button[data-act]").forEach(btn => btn.onclick = async () => {
+      const act = btn.dataset.act;
+      try{
+        if (act === "mp3"){ const r = await api(`/api/library/${encodeURIComponent(name)}/mp3`, {method:"POST"}); window.open(r.mp3, "_blank"); }
+        if (act === "reveal") await api(`/api/library/${encodeURIComponent(name)}/reveal`, {method:"POST"});
+        if (act === "abc") showAbc((window.s_abc && window.s_abc[name]) || `/files/outputs/${name}/score.abc`);
+        if (act === "del" && confirm(`¿Borrar ${name}?`)){ await fetch(`/api/library/${encodeURIComponent(name)}`, {method:"DELETE"}); loadLibrary(); }
+      }catch(e){ alert(e.message); }
+    });
+  });
+}
+
+/* ---------- ajustes ---------- */
+async function loadSettings(){
+  const h = await api("/api/health");
+  $("env").innerHTML = `
+    <div>motor</div><div><span class="dot ${h.cli_ok?"ok":"bad"}"></span>${h.cli}</div>
+    <div>modelos</div><div><span class="dot ${h.models_ok&&h.vae_ok?"ok":"bad"}"></span>${h.models_ok&&h.vae_ok?"converted + vae":"faltan pesos"}</div>
+    <div>guard de memoria</div><div>${h.guard === "patched-1gib" ? "parche 24 GB (nivel 2 tolerado con 1 GiB libre)" : h.guard}</div>
+    <div>energía</div><div>${h.power.detail || "—"}</div>
+    <div>ffmpeg</div><div>${h.ffmpeg}</div>`;
+  $("sProject").value = h.config.project;
+  $("sFrames").value = h.config.vae_core_frames;
+  $("sPrecision").value = h.config.precision;
+}
+$("saveCfg").onclick = async () => {
+  await api("/api/config", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({project: $("sProject").value, vae_core_frames: parseInt($("sFrames").value,10),
+                          precision: $("sPrecision").value})});
+  loadHealth(); loadSettings();
+};
+
+loadHealth();
+loadLibrary();
+setInterval(loadHealth, 20000);
+</script>
+</body>
+</html>

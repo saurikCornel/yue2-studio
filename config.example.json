@@ -1,0 +1,10 @@
+{
+  "project": "~/Projects/mlx-Yue",
+  "port": 8787,
+  "vae_core_frames": 128,
+  "precision": "8bit",
+  "memory_budget_gib": 16,
+  "transcription_model": "models/transcription/sheetsage2",
+  "transcription_base_model": "models/transcription/mert2-fullsong",
+  "console_visible": true
+}

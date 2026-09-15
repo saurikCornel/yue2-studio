@@ -1,0 +1,57 @@
+diff --git a/src/lyra/measure.py b/src/lyra/measure.py
+index ea189aa..8257442 100644
+--- a/src/lyra/measure.py
++++ b/src/lyra/measure.py
+@@ -280,6 +280,8 @@ class GPUExecution:
+                 or not minimum < memory_budget_gib <= psutil.virtual_memory().total / _GIB - 4):
+             raise ValueError(f"Memory budget must exceed {minimum} GiB and leave 4 GiB OS headroom")
+         self.backend, self.memory_budget_gib = backend, float(memory_budget_gib)
++        # YuE2 Studio patch
++        self.min_available_gib = max(0.5, float(os.environ.get("YUE2_MIN_AVAILABLE_GIB", "1")))
+         self._entered = False
+         self._baseline = None
+         path = None if resource_path is None else Path(resource_path)
+@@ -303,9 +305,17 @@ class GPUExecution:
+                               f"{self.memory_budget_gib:g} GiB budget")
+         pressure = sample["system_memory_pressure_level"]
+         if pressure != 1:
+-            raise MemoryError(f"System memory pressure is not normal (level={pressure})")
+-        if sample["system_available_bytes"] < 2 * _GIB:
+-            raise MemoryError("Less than 2 GiB of available system memory remains")
++            # YuE2 Studio patch: en Apple Silicon macOS marca nivel 2 de forma transitoria
++            # mientras comprime el burst de carga de pesos (visto: 1 sample de
++            # 0.25 s con 6 GiB disponibles). Se tolera mientras haya
++            # min_available_gib libres; el presupuesto de footprint y el swap
++            # siguen estrictos. Configurable con YUE2_MIN_AVAILABLE_GIB.
++            if sample["system_available_bytes"] < self.min_available_gib * _GIB:
++                raise MemoryError(f"System memory pressure is not normal (level={pressure})")
++            self.monitor.metadata["transient_pressure_warnings"] = (
++                self.monitor.metadata.get("transient_pressure_warnings", 0) + 1)
++        if sample["system_available_bytes"] < self.min_available_gib * _GIB:
++            raise MemoryError(f"Less than {self.min_available_gib:g} GiB of available system memory remains")
+         swapped = sample["system_swap_out_bytes"] - self._baseline["system_swap_out_bytes"]
+         growth = sample["system_swap_used_bytes"] - self._baseline["system_swap_used_bytes"]
+         if swapped > 64 * _MIB or growth > 128 * _MIB:
+diff --git a/src/lyra/music_tools/transcribe.py b/src/lyra/music_tools/transcribe.py
+index c562991..d9ccfd8 100644
+--- a/src/lyra/music_tools/transcribe.py
++++ b/src/lyra/music_tools/transcribe.py
+@@ -35,7 +35,17 @@ def main():
+     parser.add_argument('--task', choices=('full', 'melody-full', 'melody-vocal'), default='melody-full')
+     parser.add_argument('--preset', choices=('default', 'paper'), default='default')
+     parser.add_argument('--max-seconds', type=float)
+-    parser.add_argument('--memory-budget-gib', type=float, default=24)
++    # YuE2 Studio patch: el default 24 de upstream viola el chequeo del guard
++    # (exige budget <= RAM total - 4) en máquinas de 24 GB. Se calcula desde la RAM.
++    def default_budget():
++        try:
++            import psutil
++            total_gib = psutil.virtual_memory().total / 2 ** 30
++            return float(max(8, min(48, int(total_gib) - 8)))
++        except Exception:
++            return 16.0
++
++    parser.add_argument('--memory-budget-gib', type=float, default=default_budget())
+     parser.add_argument('--quiet', action='store_true')
+     try:
+         return run(parser.parse_args())
