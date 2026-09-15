@@ -138,8 +138,9 @@ for repo, rev in pairs:
     (ref / "main").write_text(rev)
 PYEOF
   mkdir -p models/transcription
-  SHEETSAGE="$(ls -d "$HOME"/.cache/huggingface/hub/models--m-a-p--SheetSage2/snapshots/*/ 2>/dev/null | head -1)"
-  MERT="$(ls -d "$HOME"/.cache/huggingface/hub/models--m-a-p--MERT-v2-FullSong/snapshots/*/ 2>/dev/null | head -1)"
+  # find en vez de globs: con set -u/-o pipefail un glob sin match aborta el instalador
+  SHEETSAGE="$(find "$HOME/.cache/huggingface/hub/models--m-a-p--SheetSage2/snapshots" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)"
+  MERT="$(find "$HOME/.cache/huggingface/hub/models--m-a-p--MERT-v2-FullSong/snapshots" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)"
   [ -n "$SHEETSAGE" ] && ln -sfn "$SHEETSAGE" models/transcription/sheetsage2
   [ -n "$MERT" ] && ln -sfn "$MERT" models/transcription/mert2-fullsong
   ok "transcripción lista (el studio la usa desde models/transcription/)"
