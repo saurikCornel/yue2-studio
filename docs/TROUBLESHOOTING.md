@@ -100,6 +100,27 @@ brew install ffmpeg-full        # lands in /opt/homebrew/opt/ffmpeg-full/bin/ffm
 
 The backend picks that binary automatically.
 
+## Transcription fails with `FileNotFoundError: [Errno 2] ... 'ffmpeg'`
+
+Only transcription (and covers, which transcribe first) shells out to `ffmpeg`: upstream's
+`lyra/transcription/pipeline.py` decodes the source audio with a bare `ffmpeg` command, so
+it dies before the model is loaded. `generate` never calls it, which is why songs still work.
+
+The usual trigger is opening the app from the Finder or the Dock: a `.app` launched that way
+inherits launchd's minimal `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`), where Homebrew binaries
+are missing. The app adds `/opt/homebrew/bin`, `/opt/homebrew/opt/ffmpeg-full/bin`,
+`/usr/local/bin` and `/opt/homebrew/sbin` to the backend environment, and the backend merges
+the same directories (plus the project's `.venv/bin`) into the `PATH` of every job it spawns.
+To check what the running backend sees:
+
+```bash
+curl -s http://127.0.0.1:8787/api/health | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["ffmpeg"], d["ffmpeg_ok"])'
+```
+
+`"ffmpeg_ok": false` means no usable binary was found — `brew install ffmpeg`. If you run
+`mlx-yue transcribe` by hand from a shell that has no Homebrew on `PATH`, use the absolute
+path (`export PATH="/opt/homebrew/bin:$PATH"`).
+
 ## Transcription is very slow, or will not start
 
 - Pass `--max-seconds 180` to transcribe only the first stretch (the UI does this).

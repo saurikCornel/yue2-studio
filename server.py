@@ -130,10 +130,42 @@ def guard_patch_status(project: Path) -> str:
     return "stock"
 
 
+# A double-clicked .app inherits launchd's minimal PATH (/usr/bin:/bin:/usr/sbin:/sbin),
+# so Homebrew tools are invisible to the backend and to everything it spawns. The
+# transcriber decodes audio with a bare "ffmpeg" (lyra/transcription/pipeline.py), which
+# raised FileNotFoundError when the app was opened from the Finder. Jobs get this merged
+# PATH instead of whatever the GUI handed us.
+TOOL_DIRS = ("/opt/homebrew/bin", "/opt/homebrew/opt/ffmpeg-full/bin", "/usr/local/bin",
+             "/opt/homebrew/sbin", "/usr/local/sbin")
+
+
+def tool_path(project=None) -> str:
+    parts = [p for p in os.environ.get("PATH", "").split(os.pathsep) if p]
+    extra: list = list(TOOL_DIRS)
+    if project is not None:
+        extra.insert(0, str(Path(project) / ".venv" / "bin"))
+    for directory in extra:
+        if directory not in parts and Path(directory).is_dir():
+            parts.append(directory)
+    return os.pathsep.join(parts)
+
+
+def find_ffmpeg() -> str:
+    """Absolute ffmpeg path, resolved past the minimal PATH of a GUI launch."""
+    for candidate in [FFMPEG_FULL] + [Path(d) / "ffmpeg" for d in TOOL_DIRS]:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return shutil.which("ffmpeg", path=tool_path()) or ""
+
+
+def require_ffmpeg() -> None:
+    if not find_ffmpeg():
+        raise ValueError("ffmpeg not found; transcription and covers decode the audio with it "
+                         "(install it with: brew install ffmpeg)")
+
+
 def ffmpeg_binary() -> str:
-    if FFMPEG_FULL.is_file():
-        return str(FFMPEG_FULL)
-    return shutil.which("ffmpeg") or "ffmpeg"
+    return find_ffmpeg() or "ffmpeg"
 
 
 # ---------------------------------------------------------------- jobs
@@ -200,6 +232,7 @@ def run_job(job: dict) -> None:
     job["started"] = time.time()
     CURRENT_JOB = job["id"]
     env = dict(os.environ)
+    env["PATH"] = tool_path(project)
     env["MLX_ENABLE_TF32"] = "0"
     env["LYRA_VAE"] = str(project / "models" / "vae")
     env["PYTHONUNBUFFERED"] = "1"
@@ -404,6 +437,7 @@ def build_cover_request(cfg: dict, payload: dict) -> tuple:
     audio = Path(payload.get("audio") or "")
     if not audio.is_file() or not inside(project / "inputs", audio):
         raise ValueError("pick a valid audio file from inputs/")
+    require_ffmpeg()
     style = (payload.get("style") or "").strip()
     lyrics = (payload.get("lyrics") or "").strip()
     if not style or not lyrics:
@@ -444,6 +478,7 @@ def build_transcribe_request(cfg: dict, payload: dict) -> tuple:
     audio = Path(payload.get("audio") or "")
     if not audio.is_file() or not inside(project / "inputs", audio):
         raise ValueError("pick a valid audio file from inputs/")
+    require_ffmpeg()
     name = unique_id(project, slug(f"transcription-{audio.stem}", "transcription"))
     cmd = [
         str(venv_bin(project, "mlx-yue")), "transcribe", str(audio),
@@ -645,6 +680,7 @@ class Handler(BaseHTTPRequestHandler):
             "models_ok": (project / "models" / "converted" / "conversion.json").is_file(),
             "vae_ok": (project / "models" / "vae" / "config.json").is_file(),
             "ffmpeg": ffmpeg_binary(),
+            "ffmpeg_ok": bool(find_ffmpeg()),
             "config": self.cfg,
             "guard": guard_patch_status(project),
             "power": ac_status(),

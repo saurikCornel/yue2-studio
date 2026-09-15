@@ -93,6 +93,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         var env = ProcessInfo.processInfo.environment
         env["YUE2_STUDIO_PORT"] = String(port)
         env["PYTHONUNBUFFERED"] = "1"
+        // A .app opened from the Finder inherits launchd's minimal PATH, where Homebrew
+        // binaries (ffmpeg) are missing; the transcriber shells out to ffmpeg by name.
+        var pathParts = (env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin")
+            .split(separator: ":").map(String.init)
+        for directory in ["/opt/homebrew/bin", "/opt/homebrew/opt/ffmpeg-full/bin",
+                          "/usr/local/bin", "/opt/homebrew/sbin"] where !pathParts.contains(directory) {
+            pathParts.append(directory)
+        }
+        env["PATH"] = pathParts.joined(separator: ":")
         proc.environment = env
         let logPath = consoleURL.path
         FileManager.default.createFile(atPath: logPath, contents: nil)
