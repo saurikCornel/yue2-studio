@@ -33,7 +33,8 @@ http://127.0.0.1:8787.
 7. Hit **Generate**. The Status panel shows phase, percentage, step counter and the engine log.
    - 8-step audition: about 1 minute.
    - Full 32-step song: 5–6 minutes for ~3:20 of music.
-8. When it finishes: player, **Export MP3**, **Reveal in Finder**, **Score** (the ABC score).
+8. When it finishes: player, **Export MP3** (re-encodes on demand; the MP3 is already there in
+   both cases), **Reveal in Finder**, **Score** (the ABC score).
 
 ## 4. Make a cover
 
@@ -50,10 +51,12 @@ Covers need the transcription models: install with `bash install.sh --with-trans
 ```
 ~/Projects/mlx-Yue/outputs/<name>/
     audio.flac    final audio, 48 kHz stereo (best quality)
+    audio.mp3     320 kbps, written automatically when the run finishes
     score.abc     editable score
     result.json   status, duration, truncation flags
-    audio.mp3     after Export MP3
 ```
+
+A cover writes the same files one level down, in `outputs/cover-<source>/song/`.
 
 ## Keyboard shortcuts
 

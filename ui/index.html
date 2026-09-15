@@ -211,7 +211,11 @@ come back to my street, come back to my voice</textarea>
             </div>
             <div id="cResult" class="hide">
               <audio class="player" id="cPlayer" controls preload="none"></audio>
-              <div class="btns"><button class="ghost" id="cFindr">Reveal in Finder</button></div>
+              <div class="btns">
+                <button class="ghost" id="cMp3">Export MP3</button>
+                <button class="ghost" id="cFindr">Reveal in Finder</button>
+                <button class="ghost" id="cAbc">Score</button>
+              </div>
             </div>
             <pre class="log hide" id="cLog"></pre>
           </div>
@@ -382,11 +386,22 @@ $("cGo").onclick = async () => {
     const { job } = await api("/api/cover", {method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({audio: coverAudio, style: $("cStyle").value, lyrics: $("cLyrics").value,
         mode: $("cMode").value, task: $("cTask").value, seed: parseInt($("cSeed").value || "0", 10), steps: 32})});
-    watchCover(job.id, () => {
+    watchCover(job.id, (finished) => {
+      const done = finished || job;
+      const name = done.output_name || job.output_name;
+      // A cover keeps the song in <output>/song/; the backend already hands back the full
+      // URL, and the fallback has to match it (the flat one 404s and the player dies).
       $("cResult").classList.remove("hide");
-      let url = job.result && job.result.audio_url ? job.result.audio_url : `/files/outputs/${job.output_name}/audio.flac`;
-      $("cPlayer").src = url;
-      $("cFindr").onclick = () => api(`/api/library/${encodeURIComponent(job.output_name)}/reveal`, {method:"POST"});
+      const url = (done.result && done.result.audio_url) || `/files/outputs/${name}/song/audio.flac`;
+      const player = $("cPlayer");
+      player.src = url;
+      player.load();
+      $("cMp3").onclick = async () => {
+        const r = await api(`/api/library/${encodeURIComponent(name)}/mp3`, {method:"POST"});
+        window.open(r.mp3, "_blank");
+      };
+      $("cFindr").onclick = () => api(`/api/library/${encodeURIComponent(name)}/reveal`, {method:"POST"});
+      $("cAbc").onclick = () => showAbc((done.result && done.result.abc_url) || `/files/outputs/${name}/song/score.abc`);
       loadLibrary();
     });
   }catch(e){ $("cMeta").textContent = e.message; }

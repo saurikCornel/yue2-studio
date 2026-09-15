@@ -104,5 +104,6 @@ more closely.
   (style or lyrics).
 - **Fix a song**: run `plan` to get the ABC, edit it, regenerate with `--abc`.
 - **Instrumental**: `off` mode with empty lyrics and a style that says "instrumental".
-- **Export**: the MP3 button in the app (320 kbps), or by hand:
+- **Export**: the 320 kbps MP3 is written next to the FLAC as soon as a run finishes; the MP3
+  button re-encodes it on demand, or do it by hand:
   `ffmpeg -i audio.flac -c:a libmp3lame -b:a 320k audio.mp3`.

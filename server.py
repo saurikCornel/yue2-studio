@@ -258,6 +258,8 @@ def run_job(job: dict) -> None:
             job["phase"] = "done"
             job["progress"] = 1.0
             job["result"] = read_result(project, job["output_name"])
+            if job["result"].get("audio"):
+                job["result"]["mp3_url"] = ensure_mp3(project, job["output_name"])
         else:
             job["state"] = "failed"
             job["error"] = f"process exited with code {code}"
@@ -309,6 +311,26 @@ def read_result(project: Path, name: str) -> dict:
         result["abc"] = str(abc)
         result["abc_url"] = "/files/" + abc.relative_to(project).as_posix()
     return result
+
+
+def ensure_mp3(project: Path, name: str) -> str:
+    """Export the 320k MP3 next to the artifact; returns its /files/ URL or "".
+
+    Covers keep the song in <output>/song/, so the source and the target both come from
+    artifact_dir() — never from the top of the output folder.
+    """
+    artifact = artifact_dir(project / "outputs" / name)
+    source = artifact / "audio.flac"
+    if not source.is_file():
+        return ""
+    target = artifact / "audio.mp3"
+    if not target.is_file() or target.stat().st_mtime < source.stat().st_mtime:
+        cmd = [ffmpeg_binary(), "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
+               "-c:a", "libmp3lame", "-b:a", "320k", str(target)]
+        done = subprocess.run(cmd, capture_output=True, text=True)
+        if done.returncode != 0 or not target.is_file():
+            return ""
+    return "/files/" + target.relative_to(project).as_posix()
 
 
 def worker() -> None:
@@ -700,18 +722,11 @@ class Handler(BaseHTTPRequestHandler):
         folder = project / "outputs" / name
         if not inside(project / "outputs", folder) or not folder.is_dir():
             return self.send_json({"error": "invalid song"}, 400)
-        artifact = artifact_dir(folder)
-        source = artifact / "audio.flac"
-        if not source.is_file():
-            return self.send_json({"error": "no audio.flac found"}, 400)
-        target = artifact / "audio.mp3"
-        cmd = [ffmpeg_binary(), "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
-               "-c:a", "libmp3lame", "-b:a", "320k", str(target)]
-        done = subprocess.run(cmd, capture_output=True, text=True)
-        if done.returncode != 0 or not target.is_file():
-            return self.send_json({"error": f"ffmpeg failed: {done.stderr[:200]}"}, 500)
-        return self.send_json({"mp3": "/files/" + target.relative_to(project).as_posix(),
-                               "bytes": target.stat().st_size})
+        target = artifact_dir(folder) / "audio.mp3"
+        url = ensure_mp3(project, name)
+        if not url:
+            return self.send_json({"error": "no audio.flac found, or ffmpeg failed to encode"}, 400)
+        return self.send_json({"mp3": url, "bytes": target.stat().st_size})
 
     def serve_file(self, project: Path, rel: str):
         rel = urllib.parse.unquote(rel)

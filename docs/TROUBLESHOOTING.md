@@ -98,7 +98,10 @@ when present:
 brew install ffmpeg-full        # lands in /opt/homebrew/opt/ffmpeg-full/bin/ffmpeg
 ```
 
-The backend picks that binary automatically.
+The backend picks that binary automatically. The MP3 is written next to the FLAC (`audio.mp3`)
+when a run finishes — for covers that is `<output>/song/audio.mp3`. When it is missing, the
+encode failed: the app reports "no audio.flac found, or ffmpeg failed to encode", which means
+either a failed run (no FLAC) or a broken ffmpeg install.
 
 ## Transcription fails with `FileNotFoundError: [Errno 2] ... 'ffmpeg'`
 
