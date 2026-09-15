@@ -13,6 +13,16 @@ swiftc -O -target arm64-apple-macos14.0 \
   -framework Cocoa -framework WebKit \
   "$ROOT/app/main.swift" -o "$BUNDLE/Contents/MacOS/YuE2Studio"
 
+echo "== icon =="
+ICON_KEY=""
+if [ -f "$ROOT/assets/icon.icns" ]; then
+  cp "$ROOT/assets/icon.icns" "$BUNDLE/Contents/Resources/icon.icns"
+  ICON_KEY="  <key>CFBundleIconFile</key><string>icon.icns</string>"
+  echo "   ok  assets/icon.icns"
+else
+  echo "   !   assets/icon.icns not found, using the default icon"
+fi
+
 echo "== Info.plist =="
 cat > "$BUNDLE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -23,6 +33,7 @@ cat > "$BUNDLE/Contents/Info.plist" <<PLIST
   <key>CFBundleDisplayName</key><string>$APP_NAME</string>
   <key>CFBundleExecutable</key><string>YuE2Studio</string>
   <key>CFBundleIdentifier</key><string>studio.yue2.app</string>
+$ICON_KEY
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>CFBundleVersion</key><string>1</string>

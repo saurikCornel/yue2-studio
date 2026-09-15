@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin:0; padding:0; background:transparent; width:1024px; height:1024px; overflow:hidden; }
+  .pad { width:1024px; height:1024px; display:flex; align-items:center; justify-content:center; }
+  .icon {
+    width:824px; height:824px; border-radius:186px; position:relative;
+    background:
+      radial-gradient(120% 90% at 30% 8%, #22222b 0%, #16161c 42%, #0b0b0f 100%);
+    box-shadow:
+      0 26px 60px rgba(0,0,0,.55),
+      inset 0 2px 0 rgba(255,255,255,.07),
+      inset 0 0 0 2px rgba(255,255,255,.045);
+    overflow:hidden;
+  }
+  /* halo cálido abajo, coherente con el acento de la UI */
+  .glow {
+    position:absolute; left:-14%; right:-14%; bottom:-34%; height:70%;
+    background: radial-gradient(60% 60% at 50% 50%, rgba(216,161,92,.55) 0%, rgba(216,161,92,.16) 45%, rgba(216,161,92,0) 72%);
+    filter: blur(6px);
+  }
+  .bars { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:34px; }
+  .bar { width:44px; border-radius:26px; background:linear-gradient(180deg,#f0c489 0%,#d8a15c 55%,#a97539 100%);
+         box-shadow: 0 0 26px rgba(216,161,92,.35); }
+  .b1{height:132px; opacity:.55} .b2{height:236px; opacity:.75} .b3{height:392px}
+  .b4{height:300px; opacity:.9}  .b5{height:196px; opacity:.7} .b6{height:118px; opacity:.5}
+  .dot { position:absolute; left:96px; top:96px; width:34px; height:34px; border-radius:50%;
+         background:#d8a15c; box-shadow:0 0 22px rgba(216,161,92,.8); }
+  .ring { position:absolute; inset:0; border-radius:186px; box-shadow: inset 0 0 90px rgba(0,0,0,.55); }
+</style>
+</head>
+<body>
+  <div class="pad">
+    <div class="icon">
+      <div class="glow"></div>
+      <div class="dot"></div>
+      <div class="bars">
+        <div class="bar b1"></div>
+        <div class="bar b2"></div>
+        <div class="bar b3"></div>
+        <div class="bar b4"></div>
+        <div class="bar b5"></div>
+        <div class="bar b6"></div>
+      </div>
+      <div class="ring"></div>
+    </div>
+  </div>
+</body>
+</html>

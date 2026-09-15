@@ -119,6 +119,8 @@ Apple GPU (Metal)
 ├── app/main.swift             native window
 ├── patches/apply_patches.py   idempotent, reversible patches for the port
 ├── examples/english-song.json request example used throughout the docs
+├── assets/icon.html          icon source (rendered with a headless browser)
+├── assets/icon.icns          app icon, wired in by build_app.sh
 ├── config.example.json        backend configuration
 └── docs/                      install, hardware, patches, troubleshooting, usage, models
 ```
@@ -127,6 +129,7 @@ Apple GPU (Metal)
 
 | | |
 |---|---|
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | five minutes from install to a finished song |
 | [docs/INSTALL.md](docs/INSTALL.md) | manual step-by-step installation, uninstall, disk layout |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | required hardware, measured timings, the memory guard |
 | [docs/PATCHES.md](docs/PATCHES.md) | the two patches: what they change, why, how to revert |
