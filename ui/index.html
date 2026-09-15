@@ -462,7 +462,7 @@ async function loadSettings(){
   $("env").innerHTML = `
     <div>motor</div><div><span class="dot ${h.cli_ok?"ok":"bad"}"></span>${h.cli}</div>
     <div>modelos</div><div><span class="dot ${h.models_ok&&h.vae_ok?"ok":"bad"}"></span>${h.models_ok&&h.vae_ok?"converted + vae":"faltan pesos"}</div>
-    <div>guard de memoria</div><div>${h.guard === "patched-1gib" ? "parche 24 GB (nivel 2 tolerado con 1 GiB libre)" : h.guard}</div>
+    <div>guard de memoria</div><div>${(h.guard || "").startsWith("patched") ? `parche 24 GB (nivel 2 tolerado con ${(h.guard.split("-")[1] || "1gib").replace("gib", " GiB")} libre)` : h.guard}</div>
     <div>energía</div><div>${h.power.detail || "—"}</div>
     <div>ffmpeg</div><div>${h.ffmpeg}</div>`;
   $("sProject").value = h.config.project;

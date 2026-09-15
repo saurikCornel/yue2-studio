@@ -125,8 +125,8 @@ def guard_patch_status(project: Path) -> str:
         return "unknown"
     text = path.read_text(encoding="utf-8", errors="ignore")
     if "transient_pressure_warnings" in text:
-        m = re.search(r"system_available_bytes\"\] < (\d+) \* _GIB:\n\s+raise MemoryError\(f\"System memory pressure", text)
-        return "patched-1gib" if m and m.group(1) == "1" else "patched"
+        m = re.search(r'YUE2_MIN_AVAILABLE_GIB", "([0-9.]+)"', text)
+        return f"patched-{m.group(1)}gib" if m else "patched"
     return "stock"
 
 
