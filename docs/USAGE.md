@@ -1,79 +1,80 @@
-# Uso: flujos de trabajo y cómo pedir buena música
+# Usage: workflows and how to ask for good music
 
-## La app
+## The app
 
-### Crear
+### Create
 
-1. **Estilo (prompt)**: en inglés funciona mejor. Género + instrumentación + tipo de voz +
-   tempo + clima. Ejemplo real:
-   `Argentine rock nacional, Spanish male lead vocal, jangly electric guitars, live bass and
-   drums, mid tempo 92 BPM, big anthemic chorus`.
-2. **Letra**: con etiquetas de sección. El modelo las respeta:
-   `[Intro]`, `[Verso]`, `[Pre-Estribillo]`, `[Estribillo]`, `[Puente]`, `[Final]`.
-   Versos de 4 líneas y estribillos repetidos dan las canciones más coherentes.
-3. **Modo**: `full` (melodía + acordes: el que más control da), `melody` (sin acordes, ideal
-   para covers), `off` (sin plan simbólico).
-4. **Pasos**: 32 estándar, 8 rápido, 16 intermedio.
-5. **Semilla**: mismo estilo + letra + semilla = misma canción. Cambiá la semilla para
-   explorar variantes del mismo brief.
-6. **Generar**. El panel Estado muestra fase, porcentaje, pasos y el log del CLI en vivo.
-   Al terminar: player, **Exportar MP3**, **Mostrar en Finder**, **Partitura**.
+1. **Style prompt**: English works best. Genre + instrumentation + vocal type + tempo + mood.
+   Real example:
+   `Argentine rock, Spanish male lead vocal, jangly electric guitars, live bass and drums,
+   mid tempo 92 BPM, big anthemic chorus`.
+2. **Lyrics**: use section tags, the model follows them:
+   `[Intro]`, `[Verse]`, `[Pre-Chorus]`, `[Chorus]`, `[Bridge]`, `[Outro]`.
+   Four-line verses and a repeated chorus produce the most coherent songs.
+3. **Mode**: `full` (melody + chords, the most control), `melody` (no chord symbols, best for
+   covers), `off` (no symbolic plan).
+4. **Steps**: 32 standard, 8 fast, 16 in between.
+5. **Seed**: same style + lyrics + seed reproduces the same song. Change the seed to explore
+   variants of the same brief.
+6. **Generate**. The Status panel shows phase, percentage, step counter and the CLI log live.
+   When it finishes: player, **Export MP3**, **Reveal in Finder**, **Score**.
 
 ### Cover
 
-1. Arrastrá un audio (wav, flac, mp3, m4a…) o hacé clic para elegirlo. Queda en
-   `<proyecto>/inputs/`.
-2. **Transcribir**: SheetSage2 + MERT2 sacan la melodía (y ritmo, tonalidad y estructura) y
-   te la muestran en ABC. Por defecto transcribe los primeros 180 s.
-3. Escribí el estilo nuevo y la letra nueva.
-4. **Generar cover** con modo `melody`.
+1. Drop an audio file (wav, flac, mp3, m4a…) or click to pick one. It is stored in
+   `<project>/inputs/`.
+2. **Transcribe**: SheetSage2 + MERT2 extract the melody (plus rhythm, key and structure) and
+   show it as ABC. It transcribes the first 180 seconds by default.
+3. Write the new style and the new lyrics.
+4. **Generate cover** in `melody` mode.
 
-El resultado queda en `outputs/cover-<fuente>/song/` con la transcripción al lado, en
-`outputs/cover-<fuente>/transcription/`.
+The result lands in `outputs/cover-<source>/song/`, with the transcription next to it in
+`outputs/cover-<source>/transcription/`.
 
-### Biblioteca
+### Library
 
-Lista todo lo que hay en `<proyecto>/outputs/`: canciones, covers y transcripciones, con
-duración, modo, semilla, player, exportación a MP3, revelar en Finder, ver partitura y
-borrar.
+Lists everything under `<project>/outputs/`: songs, covers and transcriptions, with duration,
+mode, seed, a player, MP3 export, Finder reveal, score viewer and delete.
 
-## Lo mismo por CLI
+## The same thing from the CLI
 
 ```bash
 cd ~/Projects/mlx-Yue
 export MLX_ENABLE_TF32=0 LYRA_VAE="$PWD/models/vae"
 PY=./.venv/bin/mlx-yue
 
-# canción completa
-$PY generate examples/cancion-es.json --model models/converted --vae "$LYRA_VAE" \
-    --precision 8bit --offline --vae-core-frames 128 --memory-budget-gib 16 --output outputs/tema
+# full song
+$PY generate ~/Projects/yue2-studio/examples/english-song.json \
+    --model models/converted --vae "$LYRA_VAE" --precision 8bit --offline \
+    --vae-core-frames 128 --memory-budget-gib 16 --output outputs/song
 
-# sólo el plan simbólico (ABC + tokens), sin audio
-$PY plan examples/cancion-es.json --model models/converted --output outputs/plan-tema
+# plan only (ABC + tokens), no audio
+$PY plan ~/Projects/yue2-studio/examples/english-song.json \
+    --model models/converted --output outputs/plan
 
-# con una partitura propia
-$PY generate examples/cancion-es.json --abc mi-partitura.abc --mode full \
-    --model models/converted --vae "$LYRA_VAE" --offline --output outputs/tema-abc
+# with your own score
+$PY generate ~/Projects/yue2-studio/examples/english-song.json --abc my-score.abc --mode full \
+    --model models/converted --vae "$LYRA_VAE" --offline --output outputs/song-abc
 
-# transcribir
-$PY transcribe inputs/tema.wav --task melody-full \
+# transcribe
+$PY transcribe inputs/song.wav --task melody-full \
     --model models/transcription/sheetsage2 --base-model models/transcription/mert2-fullsong \
-    --output outputs/transcripcion --offline --memory-budget-gib 16
+    --output outputs/transcription --offline --memory-budget-gib 16
 
-# cover de punta a punta
-$PY cover --audio inputs/tema.wav --style "Jazz-funk, warm lead vocal, Rhodes" \
-    --lyrics-file letra-nueva.txt --task melody-full --mode melody \
+# end-to-end cover
+$PY cover --audio inputs/song.wav --style "Jazz-funk, warm lead vocal, Rhodes" \
+    --lyrics-file new-lyrics.txt --task melody-full --mode melody \
     --model models/converted --vae "$LYRA_VAE" --offline --memory-budget-gib 16 \
-    --output outputs/cover-tema
+    --output outputs/cover-song
 ```
 
-Formato del request JSON:
+Request JSON format (see `examples/english-song.json`):
 
 ```json
 {
-  "id": "mi-tema",
-  "style": "género, voz, instrumentos, tempo, clima",
-  "lyrics": "[Verso]\n...\n[Estribillo]\n...",
+  "id": "my-song",
+  "style": "genre, vocals, instruments, tempo, mood",
+  "lyrics": "[Verse]\n...\n[Chorus]\n...",
   "cot": "full",
   "seed": 15092026,
   "generation_config": { "ode_steps": 32 },
@@ -81,28 +82,27 @@ Formato del request JSON:
 }
 ```
 
-`generation_config` también acepta `temperature`, `top_p`, `top_k`, `repetition_penalty`
-(dentro de `abc` y `semantic`), y el request admite `cfg_scale` (1.0-1.2) para pegar más al
-texto.
+`generation_config` also accepts `temperature`, `top_p`, `top_k` and `repetition_penalty`
+(inside `abc` and `semantic`), and the request accepts `cfg_scale` (1.0–1.2) to follow the text
+more closely.
 
-## Qué esperar
+## What to expect
 
-- **Duración**: la decide el modelo según la letra; una letra de verso+estribillo da ~1:15,
-  una canción con puente y estribillo repetido, ~3 minutos. `max_tokens: 9000` alcanza para
-  ~4 minutos.
-- **Calidad**: la voz canta la letra de forma inteligible (lo verifiqué transcribiendo el mix
-  con Whisper y volvió la letra completa). El estribillo suele ser lo mejor; los versos con
-  demasiadas palabras seguidas se atropellan.
-- **Sin batería ni teclado**: no hay UI para editar la partitura, pero la podés editar: el
-  archivo `score.abc` está en la carpeta de salida y podés regenerar pasándolo con `--abc`.
+- **Length**: the model decides from the lyrics. A verse plus a chorus gives about 1:15; a
+  song with a bridge and a repeated chorus runs about 3 minutes. `max_tokens: 9000` is enough
+  for roughly 4 minutes.
+- **Quality**: the vocal sings the lyrics intelligibly (verified by transcribing the mix with
+  Whisper and getting the lyrics back). Choruses tend to be the strongest part; verses with too
+  many syllables in a row get crowded.
+- **Score editing**: there is no score editor in the UI, but the file is right there — edit
+  `score.abc` in the output directory and regenerate by passing it with `--abc`.
 
-## Recetas
+## Recipes
 
-- **Tanteo rápido**: 8 pasos, letra corta (un verso y un estribillo), así escuchás la idea en
-  menos de un minuto.
-- **Comparar variantes**: mismo brief, semilla distinta; o mismo seed y un solo cambio (estilo
-  o letra).
-- **Arreglar una canción**: `plan` para ver el ABC, editalo, y volvé a generar con `--abc`.
-- **Instrumental**: modo `off` con letra vacía y un estilo que aclare "instrumental".
-- **Exportar**: botón MP3 en la app (320 kbps), o a mano:
+- **Quick audition**: 8 steps, short lyrics (one verse and one chorus). Under a minute.
+- **Compare variants**: same brief, different seed; or the same seed and one single change
+  (style or lyrics).
+- **Fix a song**: run `plan` to get the ABC, edit it, regenerate with `--abc`.
+- **Instrumental**: `off` mode with empty lyrics and a style that says "instrumental".
+- **Export**: the MP3 button in the app (320 kbps), or by hand:
   `ffmpeg -i audio.flac -c:a libmp3lame -b:a 320k audio.mp3`.

@@ -1,12 +1,12 @@
 #!/bin/bash
-# Compila "YuE2 Studio.app" (WKWebView + backend Python local).
+# Builds "YuE2 Studio.app" (WKWebView + local Python backend).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="YuE2 Studio"
 BUNDLE="$ROOT/build/$APP_NAME.app"
 DEST="${1:-$HOME/Applications}"
 
-echo "== compilando =="
+echo "== compiling =="
 rm -rf "$ROOT/build"
 mkdir -p "$BUNDLE/Contents/MacOS" "$BUNDLE/Contents/Resources"
 swiftc -O -target arm64-apple-macos14.0 \
@@ -37,14 +37,14 @@ cat > "$BUNDLE/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-echo "== firmando (ad-hoc) =="
-codesign --force --deep --sign - "$BUNDLE" >/dev/null 2>&1 || echo "  (codesign falló, sigue igual)"
+echo "== signing (ad-hoc) =="
+codesign --force --deep --sign - "$BUNDLE" >/dev/null 2>&1 || echo "  (codesign failed, continuing anyway)"
 
 mkdir -p "$DEST"
-echo "== instalando en $DEST =="
+echo "== installing into $DEST =="
 rm -rf "$DEST/$APP_NAME.app"
 cp -R "$BUNDLE" "$DEST/"
 xattr -dr com.apple.quarantine "$DEST/$APP_NAME.app" 2>/dev/null || true
 
-echo "listo: $DEST/$APP_NAME.app"
-echo "abrilo con: open \"$DEST/$APP_NAME.app\""
+echo "done: $DEST/$APP_NAME.app"
+echo "open it with: open \"$DEST/$APP_NAME.app\""

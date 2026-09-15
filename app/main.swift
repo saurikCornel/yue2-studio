@@ -1,5 +1,5 @@
-// YuE2 Studio — envoltorio nativo (WKWebView) del backend local de mlx-Yue.
-// Arranca server.py si no está corriendo, espera el puerto y muestra la UI.
+// YuE2 Studio — native WKWebView wrapper around the mlx-Yue local backend.
+// Starts server.py when it is not running, waits for the port and loads the UI.
 import Cocoa
 import WebKit
 
@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     var consoleURL: URL { URL(fileURLWithPath: studioDir).appendingPathComponent("server.log") }
 
-    // MARK: ciclo de vida
+    // MARK: lifecycle
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMenu()
         let config = WKWebViewConfiguration()
@@ -66,7 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
-    // MARK: servidor
+    // MARK: backend
     func healthy() -> Bool {
         guard let url = URL(string: "http://127.0.0.1:\(port)/api/health") else { return false }
         var request = URLRequest(url: url)
@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func startServer() {
         let script = URL(fileURLWithPath: studioDir).appendingPathComponent("server.py")
         guard FileManager.default.fileExists(atPath: script.path) else {
-            presentError("No encuentro \(script.path). Recompilá la app con build_app.sh.")
+            presentError("Cannot find \(script.path). Rebuild the app with build_app.sh.")
             return
         }
         let proc = Process()
@@ -104,7 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             server = proc
             startedByUs = true
         } catch {
-            presentError("No pude arrancar el backend: \(error.localizedDescription)")
+            presentError("Could not start the backend: \(error.localizedDescription)")
         }
     }
 
@@ -112,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if healthy() { loadUI(); return }
         retries += 1
         if retries > 120 {
-            presentError("El backend no respondió en 60 s. Mirá la consola (menú → Ver consola del backend).")
+            presentError("The backend did not respond within 60 s. Check the console (menu → View backend console).")
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.waitForServer() }
@@ -131,29 +131,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
-    // MARK: menú
+    // MARK: menu
     func buildMenu() {
         let main = NSMenu()
 
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "Acerca de YuE2 Studio", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About YuE2 Studio", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Recargar interfaz", action: #selector(reloadUI), keyEquivalent: "r")
-        appMenu.addItem(withTitle: "Reiniciar backend", action: #selector(restartBackend), keyEquivalent: "R")
-        appMenu.addItem(withTitle: "Ver consola del backend", action: #selector(openConsole), keyEquivalent: "l")
-        appMenu.addItem(withTitle: "Abrir outputs en Finder", action: #selector(openOutputs), keyEquivalent: "o")
+        appMenu.addItem(withTitle: "Reload interface", action: #selector(reloadUI), keyEquivalent: "r")
+        appMenu.addItem(withTitle: "Restart backend", action: #selector(restartBackend), keyEquivalent: "R")
+        appMenu.addItem(withTitle: "View backend console", action: #selector(openConsole), keyEquivalent: "l")
+        appMenu.addItem(withTitle: "Open outputs in Finder", action: #selector(openOutputs), keyEquivalent: "o")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Salir de YuE2 Studio", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit YuE2 Studio", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
 
         let editItem = NSMenuItem()
-        let edit = NSMenu(title: "Edición")
-        edit.addItem(withTitle: "Cortar", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        edit.addItem(withTitle: "Copiar", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        edit.addItem(withTitle: "Pegar", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        edit.addItem(withTitle: "Seleccionar todo", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        let edit = NSMenu(title: "Edit")
+        edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: "Select all", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editItem.submenu = edit
         main.addItem(editItem)
 

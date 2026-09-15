@@ -1,41 +1,41 @@
-# Créditos y licencias de terceros
+# Credits and third-party licenses
 
-Este repositorio (instalador, backend, UI, ventana nativa y parches) es **MIT** — ver
+This repository (installer, backend, UI, native app and patches) is **MIT** — see
 [LICENSE](../LICENSE).
 
-## Proyectos de los que depende
+## Projects this depends on
 
-| Proyecto | Autor | Licencia | Qué aporta |
+| Project | Author | License | What it provides |
 |---|---|---|---|
-| [mlx-Yue](https://github.com/vanch007/mlx-Yue) | vanch007 | Apache-2.0 | Port nativo Apple Silicon del pipeline YuE2: planner AR, flow matching NAR, VAE, transcripción |
-| [YuE / YuE2](https://github.com/multimodal-art-projection/YuE) | Multimodal Art Projection (M-A-P) | Apache-2.0 (código) | Modelo original, pipeline oficial, pesos de referencia |
-| [MLX](https://github.com/ml-explore/mlx) y [MLX-LM](https://github.com/ml-explore/mlx-lm) | Apple | MIT | Framework de inferencia en Metal |
-| [stable-audio-tools](https://github.com/Stability-AI/stable-audio-tools) | Stability AI | MIT | Arquitectura del VAE (Oobleck) |
-| [SheetSage](https://github.com/chrisdonahue/sheetsage) | Chris Donahue | MIT | Idea base de transcripción a partitura |
-| [MERT](https://github.com/m-a-p/MERT) | M-A-P | CC-BY-NC-4.0 | Encoder musical subyacente a MERT2 |
-| [Qwen](https://github.com/QwenLM/Qwen) | Alibaba | Apache-2.0 | Tokenizer compatible con el AR |
+| [mlx-Yue](https://github.com/vanch007/mlx-Yue) | vanch007 | Apache-2.0 | Native Apple Silicon port of the YuE2 pipeline: AR planner, NAR flow matching, VAE, transcription |
+| [YuE / YuE2](https://github.com/multimodal-art-projection/YuE) | Multimodal Art Projection (M-A-P) | Apache-2.0 (code) | Original model, official pipeline, reference weights |
+| [MLX](https://github.com/ml-explore/mlx) and [MLX-LM](https://github.com/ml-explore/mlx-lm) | Apple | MIT | Metal inference framework |
+| [stable-audio-tools](https://github.com/Stability-AI/stable-audio-tools) | Stability AI | MIT | VAE architecture (Oobleck) |
+| [SheetSage](https://github.com/chrisdonahue/sheetsage) | Chris Donahue | MIT | Base idea for score transcription |
+| [MERT](https://github.com/m-a-p/MERT) | M-A-P | CC-BY-NC-4.0 | Music encoder behind MERT2 |
+| [Qwen](https://github.com/QwenLM/Qwen) | Alibaba | Apache-2.0 | Tokenizer compatible with the AR model |
 
-## Modelos y datos
+## Models and data
 
-- **YuE2-3B** (3.59 B parámetros, 28 capas) fue entrenado por el equipo M-A-P con
-  Tokenwave.AI (datos sintéticos bajo licencia) y MBZUAI. Los pesos están en
-  **CC-BY-NC-4.0**: sólo uso personal y de investigación.
-- **MERT2** y **SheetSage2** se entrenaron sobre ~700 K y ~28 K horas respectivamente, con
-  foco en música CC0 y datos sintéticos.
-- `WildSongBench` es el benchmark asociado del proyecto.
+- **YuE2-3B** (3.59 B parameters, 28 layers) was trained by the M-A-P team with Tokenwave.AI
+  (licensed synthetic data) and MBZUAI. The weights are **CC-BY-NC-4.0**: personal and research
+  use only.
+- **MERT2** and **SheetSage2** were trained on roughly 700 K and 28 K hours respectively, with
+  an emphasis on CC0 music and synthetic data.
+- **WildSongBench** is the associated benchmark.
 
-Los pesos **no** se incluyen en este repositorio; se descargan desde Hugging Face al instalar.
+The weights are **not** part of this repository; they are downloaded from Hugging Face during
+installation.
 
-## Sobre los parches
+## About the patches
 
-Los dos parches de `patches/` modifican archivos de `mlx-Yue` (Apache-2.0). Se distribuyen
-como diff aplicable sobre un checkout propio del usuario, manteniendo la licencia y el aviso
-de copyright de upstream. El detalle de cada cambio y por qué está en
-[PATCHES.md](PATCHES.md).
+Both patches in `patches/` modify files from `mlx-Yue` (Apache-2.0). They are distributed as a
+diff that the user applies to their own checkout, preserving upstream's license and copyright
+notice. What each change does and why is documented in [PATCHES.md](PATCHES.md).
 
-## Cómo citar
+## Citing
 
-Si usás el modelo, citá el trabajo original de M-A-P:
+If you use the model, cite the original M-A-P work:
 
 ```bibtex
 @misc{yue2,
@@ -46,5 +46,5 @@ Si usás el modelo, citá el trabajo original de M-A-P:
 }
 ```
 
-Si usás el port MLX, citá también `vanch007/mlx-Yue`. Si te sirvió este instalador o la app,
-una mención al repo alcanza.
+If you use the MLX port, cite `vanch007/mlx-Yue` as well. If this installer or the app helped
+you, a mention of this repository is enough.

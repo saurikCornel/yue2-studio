@@ -1,4 +1,4 @@
-# YuE2 Studio — local (no se versiona)
+# YuE2 Studio — local files, never committed
 config.json
 server.log
 logs/
@@ -18,7 +18,7 @@ __pycache__/
 *.pyc
 .venv/
 
-# no subir pesos ni audio generado nunca
+# never commit weights or generated audio
 *.safetensors
 *.flac
 *.mp3

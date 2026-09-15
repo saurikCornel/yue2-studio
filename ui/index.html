@@ -92,70 +92,70 @@
   <aside class="side">
     <div class="brand"><i></i>YuE2 Studio</div>
     <nav class="nav" id="nav">
-      <button data-view="create" class="on">Crear</button>
+      <button data-view="create" class="on">Create</button>
       <button data-view="cover">Cover</button>
-      <button data-view="library">Biblioteca</button>
-      <button data-view="settings">Ajustes</button>
+      <button data-view="library">Library</button>
+      <button data-view="settings">Settings</button>
     </nav>
     <div class="foot" id="health">…</div>
   </aside>
   <main>
-    <!-- CREAR -->
+    <!-- CREATE -->
     <section id="view-create">
-      <h1>Crear canción</h1>
-      <div class="sub">letra + estilo → partitura editable → audio 48 kHz</div>
+      <h1>Create a song</h1>
+      <div class="sub">lyrics + style → editable score → 48 kHz audio</div>
       <div class="grid">
         <div class="card">
           <h2>Brief</h2>
-          <label>Estilo (prompt)</label>
-          <textarea id="style" rows="2">Argentine rock nacional, Spanish male lead vocal, jangly electric guitars, live bass and drums, mid tempo 92 BPM, big anthemic chorus</textarea>
-          <label>Letra</label>
-          <textarea id="lyrics">[Verso 1]
-Se apagó la radio del vecino
-y en el patio hay olor a lluvia
-me dejaste el mate y el cuaderno
-y una lista de canciones sin final
+          <label>Style (prompt)</label>
+          <textarea id="style" rows="2">Indie rock, English male lead vocal, jangly electric guitars, live bass and drums, Hammond organ, mid tempo 92 BPM, big anthemic chorus</textarea>
+          <label>Lyrics</label>
+          <textarea id="lyrics">[Verse 1]
+The radio next door went quiet
+and the patio smells like rain
+You left the kettle and the notebook
+and a list of songs without an end
 
-[Estribillo]
-Bailá conmigo hasta que salga el sol
-que la noche sabe de los dos
-si el mundo se hace grande, morena
-volvé a mi barrio, volvé a mi voz</textarea>
+[Chorus]
+Dance with me until the sun comes up
+let the night keep all our secrets
+if the world gets too big, darling
+come back to my street, come back to my voice</textarea>
           <div class="row">
-            <div><label>Modo</label>
+            <div><label>Mode</label>
               <select id="mode">
-                <option value="full">full · melodía + armonía</option>
-                <option value="melody">melody · sin acordes</option>
-                <option value="off">off · directo</option>
+                <option value="full">full · melody + chords</option>
+                <option value="melody">melody · no chord symbols</option>
+                <option value="off">off · direct</option>
               </select></div>
-            <div><label>Pasos</label>
+            <div><label>Steps</label>
               <select id="steps">
-                <option value="32">32 · estándar</option>
-                <option value="8">8 · rápido</option>
-                <option value="16">16 · intermedio</option>
+                <option value="32">32 · standard</option>
+                <option value="8">8 · fast</option>
+                <option value="16">16 · balanced</option>
               </select></div>
-            <div><label>Semilla</label><input id="seed" type="number" value="0"></div>
-            <div><button class="ghost" id="dice">aleatoria</button></div>
+            <div><label>Seed</label><input id="seed" type="number" value="0"></div>
+            <div><button class="ghost" id="dice">random</button></div>
           </div>
           <div class="btns">
-            <button class="primary" id="go">Generar</button>
-            <button class="ghost" id="cancel" disabled>Cancelar</button>
+            <button class="primary" id="go">Generate</button>
+            <button class="ghost" id="cancel" disabled>Cancel</button>
           </div>
         </div>
         <div>
           <div class="card">
-            <h2>Estado</h2>
+            <h2>Status</h2>
             <div class="status">
-              <div class="phase"><span id="phase">en espera</span><span id="pct">0%</span></div>
+              <div class="phase"><span id="phase">idle</span><span id="pct">0%</span></div>
               <div class="bar"><i id="bar"></i></div>
               <div class="meta" id="jobmeta">—</div>
             </div>
             <div id="result" class="hide">
               <audio class="player" id="player" controls preload="none"></audio>
               <div class="btns">
-                <button class="ghost" id="mp3">Exportar MP3</button>
-                <button class="ghost" id="findr">Mostrar en Finder</button>
-                <button class="ghost" id="showabc">Partitura</button>
+                <button class="ghost" id="mp3">Export MP3</button>
+                <button class="ghost" id="findr">Reveal in Finder</button>
+                <button class="ghost" id="showabc">Score</button>
               </div>
             </div>
             <pre class="log hide" id="log"></pre>
@@ -167,51 +167,51 @@ volvé a mi barrio, volvé a mi voz</textarea>
     <!-- COVER -->
     <section id="view-cover" class="hide">
       <h1>Cover</h1>
-      <div class="sub">transcribe una grabación y vuelve a sonar en otro estilo</div>
+      <div class="sub">transcribe a recording and have it sound in a new style</div>
       <div class="grid">
         <div class="card">
           <h2>1 · fuente</h2>
-          <div class="drop" id="drop">arrastrá un audio acá o hacé clic para elegirlo</div>
+          <div class="drop" id="drop">drop an audio file here, or click to pick one</div>
           <input type="file" id="file" accept="audio/*" class="hide">
           <div class="btns">
-            <button class="primary" id="doTranscribe">Transcribir</button>
+            <button class="primary" id="doTranscribe">Transcribe</button>
             <span id="srcname" class="sub" style="margin:0"></span>
           </div>
-          <label>Melodía detectada (ABC)</label>
+          <label>Detected melody (ABC)</label>
           <div class="abc" id="abcPreview">—</div>
-          <h2 style="margin-top:18px">2 · nuevo estilo</h2>
-          <label>Estilo</label>
+          <h2 style="margin-top:18px">2 · new style</h2>
+          <label>Style</label>
           <textarea id="cStyle" rows="2">Jazz-funk, warm lead vocal, Rhodes piano, electric bass, tight drums</textarea>
-          <label>Letra</label>
-          <textarea id="cLyrics" rows="6">[Verso]
-Bailá conmigo hasta que salga el sol
-que la noche sabe de los dos
-[Estribillo]
-volvé a mi barrio, volvé a mi voz</textarea>
+          <label>Lyrics</label>
+          <textarea id="cLyrics" rows="6">[Verse]
+Dance with me until the sun comes up
+let the night keep all our secrets
+[Chorus]
+come back to my street, come back to my voice</textarea>
           <div class="row">
-            <div><label>Tarea</label>
+            <div><label>Task</label>
               <select id="cTask">
                 <option value="melody-full">melody-full</option>
                 <option value="melody-vocal">melody-vocal</option>
                 <option value="full">full</option>
               </select></div>
-            <div><label>Modo</label>
+            <div><label>Mode</label>
               <select id="cMode"><option value="melody">melody</option><option value="full">full</option></select></div>
-            <div><label>Semilla</label><input id="cSeed" type="number" value="0"></div>
-            <div><button class="ghost" id="cGo">Generar cover</button></div>
+            <div><label>Seed</label><input id="cSeed" type="number" value="0"></div>
+            <div><button class="ghost" id="cGo">Generate cover</button></div>
           </div>
         </div>
         <div>
           <div class="card">
-            <h2>Estado</h2>
+            <h2>Status</h2>
             <div class="status">
-              <div class="phase"><span id="cPhase">en espera</span><span id="cPct">0%</span></div>
+              <div class="phase"><span id="cPhase">idle</span><span id="cPct">0%</span></div>
               <div class="bar"><i id="cBar"></i></div>
               <div class="meta" id="cMeta">—</div>
             </div>
             <div id="cResult" class="hide">
               <audio class="player" id="cPlayer" controls preload="none"></audio>
-              <div class="btns"><button class="ghost" id="cFindr">Mostrar en Finder</button></div>
+              <div class="btns"><button class="ghost" id="cFindr">Reveal in Finder</button></div>
             </div>
             <pre class="log hide" id="cLog"></pre>
           </div>
@@ -219,28 +219,28 @@ volvé a mi barrio, volvé a mi voz</textarea>
       </div>
     </section>
 
-    <!-- BIBLIOTECA -->
+    <!-- LIBRARY -->
     <section id="view-library" class="hide">
-      <h1>Biblioteca</h1>
+      <h1>Library</h1>
       <div class="sub" id="libSub">—</div>
       <div class="songs" id="songs"></div>
     </section>
 
-    <!-- AJUSTES -->
+    <!-- SETTINGS -->
     <section id="view-settings" class="hide">
-      <h1>Ajustes</h1>
-      <div class="sub">rutas y límites del motor</div>
+      <h1>Settings</h1>
+      <div class="sub">engine paths and limits</div>
       <div class="card" style="max-width:620px">
-        <h2>Motor</h2>
+        <h2>Engine</h2>
         <div class="kv" id="env"></div>
-        <label>Proyecto mlx-Yue</label>
+        <label>mlx-Yue project</label>
         <input id="sProject">
         <div class="row" style="grid-template-columns:1fr 1fr">
           <div><label>vae-core-frames</label><input id="sFrames" type="number"></div>
-          <div><label>precisión por defecto</label>
+          <div><label>default precision</label>
             <select id="sPrecision"><option value="8bit">8bit</option><option value="bf16">bf16</option></select></div>
         </div>
-        <div class="btns"><button class="primary" id="saveCfg">Guardar</button></div>
+        <div class="btns"><button class="primary" id="saveCfg">Save</button></div>
       </div>
     </section>
   </main>
@@ -255,7 +255,7 @@ const api = async (path, opts) => {
 };
 const fmtTime = (s) => s ? `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}` : "—";
 
-/* ---------- navegación ---------- */
+/* ---------- navigation ---------- */
 $("nav").addEventListener("click", (e) => {
   const btn = e.target.closest("button"); if (!btn) return;
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b === btn));
@@ -265,20 +265,20 @@ $("nav").addEventListener("click", (e) => {
   if (btn.dataset.view === "settings") loadSettings();
 });
 
-/* ---------- estado del motor ---------- */
+/* ---------- engine state ---------- */
 async function loadHealth(){
   try{
     const h = await api("/api/health");
     const ok = h.cli_ok && h.models_ok && h.vae_ok;
     $("health").innerHTML =
-      `<div><span class="dot ${ok?"ok":"bad"}"></span>${ok?"motor listo":"motor incompleto"}</div>
-       <div><span class="dot ${h.power.ac===true?"ok":"warn"}"></span>${h.power.ac===true?"enchufado":"a batería"}</div>
-       <div style="margin-top:6px">${h.disk_free_gb ?? "?"} GB libres</div>`;
+      `<div><span class="dot ${ok?"ok":"bad"}"></span>${ok?"engine ready":"engine incomplete"}</div>
+       <div><span class="dot ${h.power.ac===true?"ok":"warn"}"></span>${h.power.ac===true?"plugged in":"on battery"}</div>
+       <div style="margin-top:6px">${h.disk_free_gb ?? "?"} GB free</div>`;
     window.__health = h;
-  }catch(e){ $("health").innerHTML = `<span class="dot bad"></span>sin conexión`; }
+  }catch(e){ $("health").innerHTML = `<span class="dot bad"></span>offline`; }
 }
 
-/* ---------- crear ---------- */
+/* ---------- create ---------- */
 let activeJob = null, pollTimer = null;
 function watch(jobId, ui){
   activeJob = jobId;
@@ -289,10 +289,10 @@ function watch(jobId, ui){
     const pct = Math.round((job.progress || 0) * 100);
     ui.bar.style.width = pct + "%";
     ui.pct.textContent = pct + "%";
-    ui.phase.textContent = job.phase + (job.state === "queued" ? ` (cola ${job.queue_position})` : "");
+    ui.phase.textContent = job.phase + (job.state === "queued" ? ` (queued ${job.queue_position})` : "");
     const bits = [];
     if (job.seconds) bits.push(job.seconds + " s");
-    if (job.steps) bits.push(`pasos ${job.steps[0]}/${job.steps[1]}`);
+    if (job.steps) bits.push(`steps ${job.steps[0]}/${job.steps[1]}`);
     if (job.result && job.result.audio_seconds) bits.push("audio " + fmtTime(job.result.audio_seconds));
     ui.meta.textContent = bits.join("  ·  ") || "—";
     if (job.log_tail && job.log_tail.length){
@@ -305,7 +305,7 @@ function watch(jobId, ui){
     } else {
       ui.cancel.disabled = true; ui.go.disabled = false;
       if (job.state === "done" && job.result && job.result.audio){
-        ui.phase.textContent = "listo";
+        ui.phase.textContent = "done";
         ui.result.classList.remove("hide");
         ui.player.src = job.result.audio_url || `/files/outputs/${job.output_name}/audio.flac`;
         ui.findr.onclick = () => api(`/api/library/${encodeURIComponent(job.output_name)}/reveal`, {method:"POST"});
@@ -317,9 +317,9 @@ function watch(jobId, ui){
         loadLibrary();
       } else if (job.state === "failed"){
         ui.phase.textContent = "error";
-        ui.meta.textContent = job.error || "falló";
+        ui.meta.textContent = job.error || "failed";
       } else if (job.state === "cancelled"){
-        ui.phase.textContent = "cancelado";
+        ui.phase.textContent = "cancelled";
       }
     }
   };
@@ -357,7 +357,7 @@ drop.ondragleave = () => drop.classList.remove("hot");
 drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("hot"); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
 fileInput.onchange = () => { if (fileInput.files[0]) upload(fileInput.files[0]); };
 async function upload(file){
-  drop.textContent = "subiendo " + file.name + "…";
+  drop.textContent = "uploading " + file.name + "…";
   const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name), {method:"POST", body:file});
   const data = await res.json();
   coverAudio = data.path;
@@ -365,18 +365,18 @@ async function upload(file){
   $("srcname").textContent = (data.bytes/1e6).toFixed(1) + " MB";
 }
 $("doTranscribe").onclick = async () => {
-  if (!coverAudio) return $("abcPreview").textContent = "elegí un audio primero";
+  if (!coverAudio) return $("abcPreview").textContent = "pick an audio file first";
   tap("cPhase","cPct","cBar","cMeta","cLog");
   const { job } = await api("/api/transcribe", {method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({audio: coverAudio, task: $("cTask").value, max_seconds: 180})});
   watchCover(job.id, async () => {
     const rel = `outputs/${job.output_name}/score.abc`;
     const r = await fetch("/api/abc?path=" + encodeURIComponent(rel));
-    $("abcPreview").textContent = r.ok ? (await r.text()).slice(0, 4000) : "sin partitura";
+    $("abcPreview").textContent = r.ok ? (await r.text()).slice(0, 4000) : "no score";
   });
 };
 $("cGo").onclick = async () => {
-  if (!coverAudio) return $("cMeta").textContent = "elegí un audio primero";
+  if (!coverAudio) return $("cMeta").textContent = "pick an audio file first";
   try{
     tap("cPhase","cPct","cBar","cMeta","cLog");
     const { job } = await api("/api/cover", {method:"POST", headers:{"Content-Type":"application/json"},
@@ -392,7 +392,7 @@ $("cGo").onclick = async () => {
   }catch(e){ $("cMeta").textContent = e.message; }
 };
 function tap(p,pct,bar,meta,log){
-  $(p).textContent = "enviado"; $(pct).textContent = "0%"; $(bar).style.width = "0%";
+  $(p).textContent = "sent"; $(pct).textContent = "0%"; $(bar).style.width = "0%";
   $(meta).textContent = "—"; $(log).classList.add("hide"); $(log).textContent = "";
 }
 function watchCover(jobId, done){
@@ -413,15 +413,15 @@ function watchCover(jobId, done){
     }
     if (job.state === "running" || job.state === "queued") setTimeout(tick, 1500);
     else if (job.state === "done") done && done(job);
-    else if (job.state === "failed") $("cMeta").textContent = job.error || "falló";
+    else if (job.state === "failed") $("cMeta").textContent = job.error || "failed";
   };
   tick();
 }
 
-/* ---------- biblioteca ---------- */
+/* ---------- library ---------- */
 async function loadLibrary(){
   const { songs } = await api("/api/library");
-  $("libSub").textContent = songs.length ? `${songs.length} canciones en outputs/` : "todavía no hay nada";
+  $("libSub").textContent = songs.length ? `${songs.length} songs in outputs/` : "nothing here yet";
   window.s_abc = {};
   songs.forEach(s => { if (s.abc) window.s_abc[s.name] = s.abc; });
   $("songs").innerHTML = songs.map(s => `
@@ -434,7 +434,7 @@ async function loadLibrary(){
         ${s.seed !== undefined ? `<span class="tag">seed ${s.seed}</span>` : ""}
         ${s.status && s.status !== "complete" ? `<span class="tag bad">${s.status}</span>` : ""}
       </div>
-      ${s.audio ? `<audio controls preload="none" src="${s.audio}"></audio>` : `<div class="empty">sin audio</div>`}
+      ${s.audio ? `<audio controls preload="none" src="${s.audio}"></audio>` : `<div class="empty">no audio</div>`}
       <div class="btns">
         <button class="mini" data-act="mp3">MP3</button>
         <button class="mini" data-act="reveal">Finder</button>
@@ -450,20 +450,20 @@ async function loadLibrary(){
         if (act === "mp3"){ const r = await api(`/api/library/${encodeURIComponent(name)}/mp3`, {method:"POST"}); window.open(r.mp3, "_blank"); }
         if (act === "reveal") await api(`/api/library/${encodeURIComponent(name)}/reveal`, {method:"POST"});
         if (act === "abc") showAbc((window.s_abc && window.s_abc[name]) || `/files/outputs/${name}/score.abc`);
-        if (act === "del" && confirm(`¿Borrar ${name}?`)){ await fetch(`/api/library/${encodeURIComponent(name)}`, {method:"DELETE"}); loadLibrary(); }
+        if (act === "del" && confirm(`Delete ${name}?`)){ await fetch(`/api/library/${encodeURIComponent(name)}`, {method:"DELETE"}); loadLibrary(); }
       }catch(e){ alert(e.message); }
     });
   });
 }
 
-/* ---------- ajustes ---------- */
+/* ---------- settings ---------- */
 async function loadSettings(){
   const h = await api("/api/health");
   $("env").innerHTML = `
-    <div>motor</div><div><span class="dot ${h.cli_ok?"ok":"bad"}"></span>${h.cli}</div>
-    <div>modelos</div><div><span class="dot ${h.models_ok&&h.vae_ok?"ok":"bad"}"></span>${h.models_ok&&h.vae_ok?"converted + vae":"faltan pesos"}</div>
-    <div>guard de memoria</div><div>${(h.guard || "").startsWith("patched") ? `parche 24 GB (nivel 2 tolerado con ${(h.guard.split("-")[1] || "1gib").replace("gib", " GiB")} libre)` : h.guard}</div>
-    <div>energía</div><div>${h.power.detail || "—"}</div>
+    <div>engine</div><div><span class="dot ${h.cli_ok?"ok":"bad"}"></span>${h.cli}</div>
+    <div>models</div><div><span class="dot ${h.models_ok&&h.vae_ok?"ok":"bad"}"></span>${h.models_ok&&h.vae_ok?"converted + vae":"weights missing"}</div>
+    <div>memory guard</div><div>${(h.guard || "").startsWith("patched") ? `24 GB patch (level 2 tolerated with ${(h.guard.split("-")[1] || "1gib").replace("gib", " GiB")} free)` : h.guard}</div>
+    <div>power</div><div>${h.power.detail || "—"}</div>
     <div>ffmpeg</div><div>${h.ffmpeg}</div>`;
   $("sProject").value = h.config.project;
   $("sFrames").value = h.config.vae_core_frames;

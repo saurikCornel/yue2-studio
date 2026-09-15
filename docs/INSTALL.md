@@ -1,64 +1,66 @@
-# Instalación
+# Installation
 
-Dos caminos: el instalador (recomendado) o el paso a paso manual.
+Two paths: the installer (recommended) or the manual walkthrough.
 
-## Rápido
+## Quick path
 
 ```bash
 git clone https://github.com/stavitian/yue2-studio.git
 cd yue2-studio
-bash install.sh                        # motor + app
-bash install.sh --with-transcribe      # + transcripción y covers (+2.6 GB)
-bash install.sh --check                # solo informar el estado
-bash install.sh --no-app               # sin compilar la app nativa
+bash install.sh                        # engine + app
+bash install.sh --with-transcribe      # + transcription and covers (+2.6 GB)
+bash install.sh --check                # report the state of an install
+bash install.sh --no-app               # skip the native app
 bash install.sh --help
 ```
 
-Variables: `YUE2_PROJECT` (dónde clonar el port, por defecto `~/Projects/mlx-Yue`) y
-`YUE2_MIN_AVAILABLE_GIB` (memoria libre mínima que exige el parche del guard, por defecto 1).
+Environment variables: `YUE2_PROJECT` (where the MLX port is cloned, default
+`~/Projects/mlx-Yue`) and `YUE2_MIN_AVAILABLE_GIB` (free memory the memory-guard patch
+requires, default 1).
 
-El instalador es idempotente: si ya hay pesos, entorno o parches, los saltea. Re-ejecutarlo
-es la forma normal de reparar o actualizar una instalación.
+The installer is idempotent: existing weights, virtualenvs and patches are skipped.
+Re-running it is the normal way to repair or update an installation.
 
-Qué hace, en orden:
+What it does, in order:
 
-1. Verifica Apple Silicon, macOS, memoria (≥24 GB), `uv`, `ffmpeg`, `swiftc`.
-2. Clona (o actualiza con `git pull --ff-only`) `vanch007/mlx-Yue` en `$YUE2_PROJECT`.
-3. Aplica los parches de `patches/apply_patches.py`.
-4. `uv sync --frozen --no-dev` (+ `--extra transcription` si pediste covers).
-5. Descarga los pesos convertidos (~10.5 GB) y la VAE, y limpia `.cache`/`.gitattributes`.
-6. Crea `models/paths.json` y, si corresponde, enlaza los modelos de transcripción.
-7. Corre el doctor y exige `pass`.
-8. Escribe `config.json` y compila `YuE2 Studio.app` en `~/Applications`.
+1. Checks Apple Silicon, macOS version, memory (≥24 GB), `uv`, `ffmpeg`, `swiftc`.
+2. Clones (or updates with `git pull --ff-only`) `vanch007/mlx-Yue` into `$YUE2_PROJECT`.
+3. Applies the patches from `patches/apply_patches.py`.
+4. Runs `uv sync --frozen --no-dev` (plus `--extra transcription` if you asked for covers).
+5. Downloads the converted weights (~10.5 GB) and the VAE, then removes `.cache` and
+   `.gitattributes` from the model directories.
+6. Writes `models/paths.json` and, when applicable, links the transcription models.
+7. Runs the runtime doctor and requires `pass`.
+8. Writes `config.json` and builds `YuE2 Studio.app` into `~/Applications`.
 
-## Manual
+## Manual walkthrough
 
-### 0. Dependencias
+### 0. Dependencies
 
 ```bash
 brew install uv ffmpeg
-xcode-select --install        # o Xcode completo, para compilar la app
+xcode-select --install        # or full Xcode, to build the native app
 ```
 
-### 1. Port MLX
+### 1. MLX port
 
 ```bash
 git clone https://github.com/vanch007/mlx-Yue.git ~/Projects/mlx-Yue
 cd ~/Projects/mlx-Yue
-uv sync --frozen --no-dev                 # NO uses "uv sync" a secas: arrastra el grupo dev
-uv pip install --python .venv/bin/python hf_transfer    # descargas más rápidas
+uv sync --frozen --no-dev                 # do NOT run plain "uv sync": it pulls the dev group too
+uv pip install --python .venv/bin/python hf_transfer    # faster downloads
 ```
 
-### 2. Parches
+### 2. Patches
 
 ```bash
 python3 ~/Projects/yue2-studio/patches/apply_patches.py --project ~/Projects/mlx-Yue
 python3 ~/Projects/yue2-studio/patches/apply_patches.py --project ~/Projects/mlx-Yue --check
 ```
 
-Si tenés 32 GB o más, podés saltear este paso (ver [PATCHES.md](PATCHES.md)).
+On a machine with 32 GB or more you can skip this step (see [PATCHES.md](PATCHES.md)).
 
-### 3. Pesos
+### 3. Weights
 
 ```bash
 cd ~/Projects/mlx-Yue
@@ -72,44 +74,45 @@ rm -rf models/converted/.cache models/vae/.cache models/converted/.gitattributes
 printf '{\n  "model": "models/converted",\n  "vae": "models/vae"\n}\n' > models/paths.json
 ```
 
-### 4. Verificar
+### 4. Verify
 
 ```bash
 cd ~/Projects/mlx-Yue
 MLX_ENABLE_TF32=0 ./.venv/bin/mlx-yue doctor --model models/converted --vae models/vae --verify-hashes
 ```
 
-Tiene que decir `"status": "pass"` con `model` y `vae` en `true`. Si falla, mirá
+It has to report `"status": "pass"` with `model` and `vae` set to `true`. If it fails, see
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-### 5. Primera canción
+### 5. First song
 
 ```bash
 cd ~/Projects/mlx-Yue
 export MLX_ENABLE_TF32=0 LYRA_VAE="$PWD/models/vae"
-./.venv/bin/mlx-yue generate examples/cancion-es.json \
+cp ~/Projects/yue2-studio/examples/english-song.json requests/
+./.venv/bin/mlx-yue generate requests/english-song.json \
   --model models/converted --vae "$LYRA_VAE" --precision 8bit --offline \
-  --vae-core-frames 128 --memory-budget-gib 16 --output outputs/prueba
-ffprobe outputs/prueba/audio.flac     # 48 kHz, estéreo, ~3:20
+  --vae-core-frames 128 --memory-budget-gib 16 --output outputs/first-song
+ffprobe outputs/first-song/audio.flac     # 48 kHz, stereo, about 1:20
 ```
 
 ### 6. App
 
 ```bash
 cd ~/Projects/yue2-studio
-bash build_app.sh                     # instala en ~/Applications
-bash build_app.sh /Applications       # o donde quieras
+bash build_app.sh                     # installs into ~/Applications
+bash build_app.sh /Applications       # or wherever you prefer
 open "$HOME/Applications/YuE2 Studio.app"
 ```
 
-Sin app nativa, la interfaz es la misma en el navegador:
+Without the native app, the interface is the same in a browser:
 
 ```bash
 cd ~/Projects/yue2-studio
 python3 server.py                     # http://127.0.0.1:8787
 ```
 
-### 7. Transcripción y covers (opcional)
+### 7. Transcription and covers (optional)
 
 ```bash
 cd ~/Projects/mlx-Yue
@@ -121,7 +124,7 @@ import pathlib
 for repo, rev in (("m-a-p/SheetSage2", "eab522a8168e8b8b8c4856bf8609cd86198f01fe"),
                   ("m-a-p/MERT-v2-FullSong", "d8ba1c745e733b3908ce6ad16ebeb17ac7600a42")):
     path = snapshot_download(repo, revision=rev, allow_patterns=["config.json", "model.safetensors"])
-    ref = pathlib.Path(path).parents[1] / "refs"      # necesario para --offline
+    ref = pathlib.Path(path).parents[1] / "refs"      # required for --offline
     ref.mkdir(parents=True, exist_ok=True)
     (ref / "main").write_text(rev)
     print("ok", repo)
@@ -131,34 +134,34 @@ ln -sfn "$HOME/.cache/huggingface/hub/models--m-a-p--SheetSage2/snapshots/"*/ mo
 ln -sfn "$HOME/.cache/huggingface/hub/models--m-a-p--MERT-v2-FullSong/snapshots/"*/ models/transcription/mert2-fullsong
 ```
 
-Prueba rápida:
+Quick test:
 
 ```bash
-./.venv/bin/mlx-yue transcribe inputs/mi-audio.wav --task melody-full \
+./.venv/bin/mlx-yue transcribe inputs/my-audio.wav --task melody-full \
   --model models/transcription/sheetsage2 --base-model models/transcription/mert2-fullsong \
-  --output outputs/transcripcion --offline --memory-budget-gib 16
+  --output outputs/transcription --offline --memory-budget-gib 16
 ```
 
-## Desinstalar
+## Uninstall
 
 ```bash
 rm -rf "$HOME/Applications/YuE2 Studio.app"
-rm -rf ~/Projects/yue2-studio ~/Projects/mlx-Yue        # el port y los pesos (11 GB)
+rm -rf ~/Projects/yue2-studio ~/Projects/mlx-Yue        # port and weights (11 GB)
 rm -rf ~/.cache/huggingface/hub/models--m-a-p--SheetSage2 \
-       ~/.cache/huggingface/hub/models--m-a-p--MERT-v2-FullSong   # transcripción (2.6 GB)
+       ~/.cache/huggingface/hub/models--m-a-p--MERT-v2-FullSong   # transcription (2.6 GB)
 ```
 
-No se instala nada fuera de esas rutas: ni demonios, ni servicios, ni ficheros del sistema.
+Nothing is installed outside those paths: no daemons, no services, no system files.
 
-## Estructura en disco tras instalar
+## Disk layout after installing
 
 ```
-~/Projects/mlx-Yue/                    11 GB   port + entorno + pesos
+~/Projects/mlx-Yue/                    11 GB   port + virtualenv + weights
   ├── models/converted/                 9.2 GB AR (bf16/8bit) + NAR + tokenizer
-  ├── models/vae/                       507 MB VAE 48 kHz
-  ├── models/transcription/             enlaces a la caché de HuggingFace
-  └── outputs/                          canciones, covers, transcripciones
-~/Projects/yue2-studio/                 200 KB  app, backend, UI, parches
-~/Applications/YuE2 Studio.app          111 KB  binario Swift
-~/.cache/huggingface/hub/               2.6 GB  SheetSage2 + MERT2-FullSong (opcional)
+  ├── models/vae/                       507 MB 48 kHz VAE
+  ├── models/transcription/             links into the Hugging Face cache
+  └── outputs/                          songs, covers, transcriptions
+~/Projects/yue2-studio/                 200 KB app, backend, UI, patches
+~/Applications/YuE2 Studio.app          111 KB Swift binary
+~/.cache/huggingface/hub/               2.6 GB SheetSage2 + MERT2-FullSong (optional)
 ```

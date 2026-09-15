@@ -1,55 +1,56 @@
-# Modelos y licencias
+# Models and licenses
 
-Este repo no incluye pesos: el instalador los baja desde Hugging Face. Acá está qué es cada
-cosa, cuánto pesa y qué licencia tiene.
+This repository ships no weights: the installer downloads them from Hugging Face. Here is
+what each piece is, how large it is and under which license.
 
-## Generación
+## Generation
 
-| Pieza | Repo | Tamaño | Licencia |
+| Piece | Repo | Size | License |
 |---|---|---|---|
-| Generador AR (bf16) | `vanch007/mlx-Yue2-3B` → `ar-bf16.safetensors` | 4.33 GB | CC-BY-NC-4.0 |
-| Generador AR (int8) | `vanch007/mlx-Yue2-3B` → `ar-8bit.safetensors` | 2.66 GB | CC-BY-NC-4.0 |
+| AR generator (bf16) | `vanch007/mlx-Yue2-3B` → `ar-bf16.safetensors` | 4.33 GB | CC-BY-NC-4.0 |
+| AR generator (int8) | `vanch007/mlx-Yue2-3B` → `ar-8bit.safetensors` | 2.66 GB | CC-BY-NC-4.0 |
 | NAR (flow matching, bf16) | `vanch007/mlx-Yue2-3B` → `nar-bf16.safetensors` | 2.93 GB | CC-BY-NC-4.0 |
 | Tokenizer | `vanch007/mlx-Yue2-3B` → `qwen.tiktoken` | 2.5 MB | — |
-| VAE 48 kHz estéreo | `m-a-p/YuE2-Vae` → `model.safetensors` | 507 MB | CC-BY-NC-4.0 |
+| 48 kHz stereo VAE | `m-a-p/YuE2-Vae` → `model.safetensors` | 507 MB | CC-BY-NC-4.0 |
 
-Total: **~10.5 GB**. El AR trae dos precisiones: `8bit` (más rápido y liviano, el que usa la
-app) y `bf16` (referencia de precisión). El NAR y la VAE siempre van bf16/FP32.
+Total: **~10.5 GB**. The AR model ships in two precisions: `8bit` (faster and lighter, what
+the app uses) and `bf16` (precision reference). NAR and VAE are always bf16/FP32.
 
-Los pesos son los del port MLX (`vanch007/mlx-Yue2-3B`), ya convertidos de los originales de
-`m-a-p/YuE2-3B`; pesan menos porque el AR está cuantizado y porque sólo se extrajeron las
-partes que usa la inferencia.
+These are the MLX port's weights (`vanch007/mlx-Yue2-3B`), already converted from the
+originals at `m-a-p/YuE2-3B`; they are smaller because the AR is quantized and because only
+the parts inference needs were extracted.
 
-## Transcripción y covers (opcional, +2.6 GB)
+## Transcription and covers (optional, +2.6 GB)
 
-| Pieza | Repo | Tamaño | Licencia |
+| Piece | Repo | Size | License |
 |---|---|---|---|
-| SheetSage2 (audio → partitura) | `m-a-p/SheetSage2` | 218 MB | CC-BY-NC-4.0 |
-| MERT2-FullSong (encoder musical) | `m-a-p/MERT-v2-FullSong` | 2.4 GB | CC-BY-NC-4.0 |
+| SheetSage2 (audio → score) | `m-a-p/SheetSage2` | 218 MB | CC-BY-NC-4.0 |
+| MERT2-FullSong (music encoder) | `m-a-p/MERT-v2-FullSong` | 2.4 GB | CC-BY-NC-4.0 |
 
-Revisión fijada en `src/lyra/transcription/model.py` del port: se descargan esos commits
-exactos, no `main`.
+Pinned revisions live in the port's `src/lyra/transcription/model.py`: the installer fetches
+those exact commits, not `main`.
 
-## Licencia de lo generado
+## License of what you generate
 
-Los pesos son **CC-BY-NC-4.0**: uso de investigación y personal, **no comercial**. Lo que
-generes hereda esa restricción. Si necesitás uso comercial, mirá los términos de M-A-P y de
-Tokenwave.AI (que aportó buena parte de los datos sintéticos de entrenamiento).
+The weights are **CC-BY-NC-4.0**: research and personal use, **not commercial**. Anything you
+generate inherits that restriction. For commercial use, check the terms published by M-A-P and
+by Tokenwave.AI (which provided most of the synthetic training data).
 
-## Qué NO usa
+## What this project does not use
 
-- Nada de la ruta CUDA: `yue2_infer` (el paquete oficial) es Linux + GPU NVIDIA. En macOS
-  tiene ramas MPS, pero fija `torch==2.10.0`, cuya atención causal en BF16 está rota en MPS
-  (filtra hasta 3 keys futuras, sin error ni NaN; issue #176 de `multimodal-art-projection/YuE`).
-- PyTorch en runtime: el port es MLX puro. Torch sólo aparece en tests de desarrollo.
+- Nothing from the CUDA path: `yue2_infer` (the official package) is Linux + NVIDIA GPU. On
+  macOS it has MPS branches, but it pins `torch==2.10.0`, whose BF16 causal attention is broken
+  on MPS (it leaks up to three future keys, with no error and no NaN; issue #176 in
+  `multimodal-art-projection/YuE`).
+- PyTorch at runtime: the port is pure MLX. Torch only appears in development tests.
 
-## Verificar lo que bajaste
+## Verify what you downloaded
 
 ```bash
 cd ~/Projects/mlx-Yue
 MLX_ENABLE_TF32=0 ./.venv/bin/mlx-yue doctor --model models/converted --vae models/vae --verify-hashes
 ```
 
-`--verify-hashes` compara SHA-256 contra los que trae el propio paquete. En la instalación de
-referencia: `ar-8bit` 2 656 158 264 bytes, `ar-bf16` 4 331 951 136, `nar-bf16` 2 929 490 456,
-VAE 530 512 720.
+`--verify-hashes` compares SHA-256 against the ones shipped with the package. Reference
+sizes: `ar-8bit` 2,656,158,264 bytes, `ar-bf16` 4,331,951,136, `nar-bf16` 2,929,490,456, VAE
+530,512,720.

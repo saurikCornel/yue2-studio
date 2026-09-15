@@ -1,27 +1,26 @@
 # YuE2 Studio
 
 A native macOS app (plus a one-command installer) to run **YuE2-3B** — the open music
-foundation model with symbolic planning — **locally on Apple Silicon**, with the fixes
-needed to make it work on a 24 GB Mac.
+foundation model with symbolic planning — **locally on Apple Silicon**, with the fixes needed
+to make it work on a 24 GB Mac.
 
-Generation, covers and transcription run entirely offline on the GPU through the MLX
-port. No CUDA, no cloud, no PyTorch at runtime.
+Generation, covers and transcription run entirely offline on the GPU through the MLX port.
+No CUDA, no cloud, no PyTorch at runtime.
 
-![UI](docs/images/ui-create.png)
+![The Create tab](docs/images/ui-create.png)
 
 ---
 
 ## What you get
 
-- **Desktop app** (`YuE2 Studio.app`): create songs, make covers from any recording, browse
-  a library of everything you generated, listen, export MP3.
+- **Desktop app** (`YuE2 Studio.app`): create songs, make covers from any recording, browse a
+  library of everything you generated, listen, export MP3.
 - **Installer** (`install.sh`): clones the MLX port, applies the patches, downloads the
   weights, verifies the runtime and builds the app. Re-runnable and idempotent.
 - **Two patches** for machines with 24 GB of unified memory (see
   [docs/PATCHES.md](docs/PATCHES.md)): the upstream resource guard aborts on a transient
-  macOS memory-pressure warning, and the transcription helper ships a default memory
-  budget that a 24 GB Mac can never satisfy.
-- **Optional bridge to the repo's own skill** (`skills/yue2-music/`) for agentic workflows.
+  macOS memory-pressure warning, and the transcription helper ships a default memory budget
+  that a 24 GB Mac can never satisfy.
 
 ## Requirements
 
@@ -30,7 +29,7 @@ port. No CUDA, no cloud, no PyTorch at runtime.
 | Machine | Apple Silicon (M1–M5). Intel/Rosetta is rejected by the runtime |
 | macOS | 14.2+ (M1–M4) · 26.2+ for M5 |
 | Memory | 24 GB unified minimum — 32 GB+ is comfortable (upstream tests on 32 GB and 128 GB) |
-| Disk | ~14 GB (11 GB weights + 2.6 GB transcription models + env) |
+| Disk | ~14 GB (11 GB of weights + 2.6 GB of transcription models + virtualenv) |
 | Tools | [uv](https://docs.astral.sh/uv/), `ffmpeg`, Xcode command line tools (for the app) |
 
 Measured on a MacBook Pro M5 Pro / 24 GB / macOS 27:
@@ -74,24 +73,25 @@ Full manual path, step by step: [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Use
 
-**Create.** Write a style prompt and lyrics (section tags like `[Verso]` / `[Estribillo]`
-work), pick a mode (`full` = melody + chords, `melody`, `off`), pick steps (32 = standard,
-8 = fast), hit Generate. You get a 48 kHz stereo FLAC, an editable ABC score, and the plan.
+**Create.** Write a style prompt and lyrics (section tags like `[Verse]` / `[Chorus]` work),
+pick a mode (`full` = melody + chords, `melody`, `off`), pick steps (32 = standard, 8 = fast),
+hit Generate. You get a 48 kHz stereo FLAC, an editable ABC score and the plan.
 
 **Cover.** Drop in any recording; it is transcribed with SheetSage2 + MERT2 into a melody
 line, you write the new style and lyrics, and YuE2 re-synthesizes it. Covers need
 `--with-transcribe`.
 
-**Library.** Everything under `<project>/outputs/` with players, MP3 export, Finder reveal
-and the score viewer.
+**Library.** Everything under `<project>/outputs/` with players, MP3 export, Finder reveal and
+the score viewer.
 
 Same thing from the CLI:
 
 ```bash
 cd ~/Projects/mlx-Yue
 export MLX_ENABLE_TF32=0 LYRA_VAE="$PWD/models/vae"
-./.venv/bin/mlx-yue generate examples/cancion-es.json --model models/converted --vae "$LYRA_VAE" \
-    --precision 8bit --offline --vae-core-frames 128 --memory-budget-gib 16 --output outputs/mi-tema
+./.venv/bin/mlx-yue generate ~/Projects/yue2-studio/examples/english-song.json \
+    --model models/converted --vae "$LYRA_VAE" --precision 8bit --offline \
+    --vae-core-frames 128 --memory-budget-gib 16 --output outputs/my-song
 ```
 
 More workflows and prompt tips: [docs/USAGE.md](docs/USAGE.md).
@@ -112,27 +112,28 @@ Apple GPU (Metal)
 
 ```
 .
-├── install.sh              instalador completo
-├── build_app.sh            compila YuE2 Studio.app
-├── server.py               backend local
-├── ui/index.html           interfaz (Crear / Cover / Biblioteca / Ajustes)
-├── app/main.swift          ventana nativa
-├── patches/apply_patches.py  parches para el port, idempotentes y reversibles
-├── config.example.json     configuración del backend
-└── docs/                   instalación, hardware, parches, problemas, uso, modelos
+├── install.sh                 full installer
+├── build_app.sh               builds YuE2 Studio.app
+├── server.py                  local backend
+├── ui/index.html              interface (Create / Cover / Library / Settings)
+├── app/main.swift             native window
+├── patches/apply_patches.py   idempotent, reversible patches for the port
+├── examples/english-song.json request example used throughout the docs
+├── config.example.json        backend configuration
+└── docs/                      install, hardware, patches, troubleshooting, usage, models
 ```
 
 ## Documentation
 
 | | |
 |---|---|
-| [docs/INSTALL.md](docs/INSTALL.md) | instalación manual paso a paso, desinstalación |
-| [docs/HARDWARE.md](docs/HARDWARE.md) | qué hardware hace falta, tiempos reales, el guard de memoria |
-| [docs/PATCHES.md](docs/PATCHES.md) | los dos parches: qué cambian, por qué, cómo revertirlos |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | todos los errores vistos y su arreglo |
-| [docs/USAGE.md](docs/USAGE.md) | flujos de trabajo, prompts, modos, pasos, seeds |
-| [docs/MODELS.md](docs/MODELS.md) | qué se descarga, tamaños, licencias |
-| [docs/CREDITS.md](docs/CREDITS.md) | proyectos y licencias de terceros |
+| [docs/INSTALL.md](docs/INSTALL.md) | manual step-by-step installation, uninstall, disk layout |
+| [docs/HARDWARE.md](docs/HARDWARE.md) | required hardware, measured timings, the memory guard |
+| [docs/PATCHES.md](docs/PATCHES.md) | the two patches: what they change, why, how to revert |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | every error seen so far and its fix |
+| [docs/USAGE.md](docs/USAGE.md) | workflows, prompts, modes, steps, seeds |
+| [docs/MODELS.md](docs/MODELS.md) | what gets downloaded, sizes, licenses |
+| [docs/CREDITS.md](docs/CREDITS.md) | third-party projects and licenses |
 
 ## Licenses and limits
 
@@ -143,5 +144,5 @@ Apple GPU (Metal)
 - Trained by the Multimodal Art Projection (M-A-P) team with Tokenwave.AI and MBZUAI.
 
 The port is young and this machine class is at the edge of what it was tested on. The
-installer and the two patches exist so that a 24 GB Mac can actually finish a song; if you
-have 32 GB or more, you can run upstream unpatched.
+installer and the two patches exist so that a 24 GB Mac can actually finish a song; with 32 GB
+or more you can run upstream unpatched.

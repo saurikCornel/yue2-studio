@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""YuE2 Studio — backend local.
+"""YuE2 Studio — local backend.
 
-Envuelve el CLI de mlx-Yue (generacion, covers y transcripcion) para la app
-nativa de macOS. Solo stdlib; escucha en 127.0.0.1.
+Wraps the mlx-Yue CLI (generation, covers, transcription) for the native macOS
+app. Standard library only; listens on 127.0.0.1.
 
-Endpoints principales:
+Main endpoints:
   GET  /                       -> UI
-  GET  /api/health             -> estado de proyecto, modelos, ffmpeg, bateria, parche
-  POST /api/generate           -> encola una cancion
-  POST /api/cover              -> encola un cover (transcribe + genera)
-  POST /api/transcribe         -> encola una transcripcion (audio -> ABC)
-  POST /api/upload?name=x      -> sube un audio a inputs/
+  GET  /api/health             -> project, models, ffmpeg, power and patch state
+  POST /api/generate           -> queue a song
+  POST /api/cover              -> queue a cover (transcribe + generate)
+  POST /api/transcribe         -> queue a transcription (audio -> ABC)
+  POST /api/upload?name=x      -> upload audio into inputs/
   GET  /api/jobs, /api/jobs/<id>, POST /api/jobs/<id>/cancel
-  GET  /api/library            -> canciones generadas
+  GET  /api/library            -> generated songs
   POST /api/library/<id>/mp3   -> exporta mp3 320k
   POST /api/library/<id>/reveal, DELETE /api/library/<id>
-  GET  /files/<relpath>        -> sirve audio/texto desde outputs/ e inputs/ (con Range)
+  GET  /files/<relpath>        -> serve audio/text from outputs/ and inputs/ (Range)
 """
 from __future__ import annotations
 
@@ -114,7 +114,7 @@ def ac_status() -> dict:
     try:
         out = subprocess.run(["pmset", "-g", "ps"], capture_output=True, text=True, timeout=5).stdout
     except Exception:
-        return {"ac": None, "detail": "pmset no disponible"}
+        return {"ac": None, "detail": "pmset unavailable"}
     ac = "AC Power" in out
     return {"ac": ac, "detail": out.strip().splitlines()[0] if out.strip() else ""}
 
@@ -147,7 +147,7 @@ def new_job(kind: str, request: dict, output_name: str, cmd: list, project: Path
         "cmd": cmd,
         "project": str(project),
         "state": "queued",
-        "phase": "en cola",
+        "phase": "queued",
         "progress": 0.0,
         "log": [],
         "started": None,
@@ -172,24 +172,24 @@ def advance(job: dict, line: str) -> None:
     m = PROGRESS_RE.search(line)
     if m:
         done, total, pct = int(m.group(1)), int(m.group(2)), int(m.group(3))
-        job["phase"] = "sintetizando audio"
+        job["phase"] = "synthesizing audio"
         job["progress"] = max(job["progress"], 0.38 + 0.57 * (pct / 100.0))
         job["steps"] = [done, total]
         return
     if "planning" in low or "abc" in low and "plan" in low:
-        job["phase"] = "planificando partitura"
+        job["phase"] = "planning the score"
         job["progress"] = max(job["progress"], 0.06)
     elif "semantic" in low:
-        job["phase"] = "generando tokens (AR)"
+        job["phase"] = "generating tokens (AR)"
         job["progress"] = max(job["progress"], 0.16)
     elif "synthes" in low or "acoustic" in low or "flow" in low or "nar" in low:
-        job["phase"] = "sintetizando audio"
+        job["phase"] = "synthesizing audio"
         job["progress"] = max(job["progress"], 0.38)
     elif "vae" in low or "decod" in low:
-        job["phase"] = "decodificando audio (VAE)"
+        job["phase"] = "decoding audio (VAE)"
         job["progress"] = max(job["progress"], 0.95)
     elif "transcri" in low or "sheetsage" in low:
-        job["phase"] = "transcribiendo"
+        job["phase"] = "transcribing"
         job["progress"] = max(job["progress"], 0.3)
 
 
@@ -222,12 +222,12 @@ def run_job(job: dict) -> None:
         job["seconds"] = round(time.time() - job["started"], 1)
         if code == 0:
             job["state"] = "done"
-            job["phase"] = "listo"
+            job["phase"] = "done"
             job["progress"] = 1.0
             job["result"] = read_result(project, job["output_name"])
         else:
             job["state"] = "failed"
-            job["error"] = f"el proceso salio con codigo {code}"
+            job["error"] = f"process exited with code {code}"
             tail = [l for l in job["log"] if "Error" in l or "error" in l][-3:]
             if tail:
                 job["error"] += " — " + " | ".join(t.strip()[:200] for t in tail)
@@ -239,11 +239,11 @@ def run_job(job: dict) -> None:
         job["proc"] = None
         CURRENT_JOB = None
         if job["state"] == "cancelled":
-            job["phase"] = "cancelado"
+            job["phase"] = "cancelled"
 
 
 def artifact_dir(folder: Path) -> Path:
-    """Los covers guardan la cancion en <output>/song/; las canciones directas en <output>/."""
+    """Covers keep the song in <output>/song/; direct generations in <output>/."""
     if (folder / "audio.flac").is_file():
         return folder
     nested = folder / "song"
@@ -353,9 +353,9 @@ def library(project: Path) -> list:
         if (entry / "cover.json").is_file():
             item["kind"] = "cover"
         elif (entry / "transcription.mid").is_file() or (entry / "events.json").is_file():
-            item["kind"] = "transcripcion"
+            item["kind"] = "transcription"
         else:
-            item["kind"] = "cancion"
+            item["kind"] = "song"
         items.append(item)
     return items
 
@@ -367,10 +367,10 @@ def build_generate_request(cfg: dict, payload: dict) -> tuple:
     style = (payload.get("style") or "").strip()
     lyrics = (payload.get("lyrics") or "").strip()
     if not style:
-        raise ValueError("el estilo no puede estar vacio")
+        raise ValueError("style prompt cannot be empty")
     if not lyrics:
-        raise ValueError("la letra no puede estar vacia")
-    base = slug(payload.get("id") or style.split(",")[0], "cancion")
+        raise ValueError("lyrics cannot be empty")
+    base = slug(payload.get("id") or style.split(",")[0], "song")
     name = unique_id(project, base)
     steps = int(payload.get("steps") or 32)
     precision = payload.get("precision") or cfg["precision"]
@@ -403,11 +403,11 @@ def build_cover_request(cfg: dict, payload: dict) -> tuple:
     project = project_dir(cfg)
     audio = Path(payload.get("audio") or "")
     if not audio.is_file() or not inside(project / "inputs", audio):
-        raise ValueError("elegi un audio valido de la carpeta inputs/")
+        raise ValueError("pick a valid audio file from inputs/")
     style = (payload.get("style") or "").strip()
     lyrics = (payload.get("lyrics") or "").strip()
     if not style or not lyrics:
-        raise ValueError("estilo y letra son obligatorios para el cover")
+        raise ValueError("style and lyrics are required for a cover")
     base = slug(f"cover-{audio.stem}", "cover")
     name = unique_id(project, base)
     steps = int(payload.get("steps") or 32)
@@ -443,8 +443,8 @@ def build_transcribe_request(cfg: dict, payload: dict) -> tuple:
     project = project_dir(cfg)
     audio = Path(payload.get("audio") or "")
     if not audio.is_file() or not inside(project / "inputs", audio):
-        raise ValueError("elegi un audio valido de la carpeta inputs/")
-    name = unique_id(project, slug(f"transcripcion-{audio.stem}", "transcripcion"))
+        raise ValueError("pick a valid audio file from inputs/")
+    name = unique_id(project, slug(f"transcription-{audio.stem}", "transcription"))
     cmd = [
         str(venv_bin(project, "mlx-yue")), "transcribe", str(audio),
         "--task", payload.get("task") or "full",
@@ -469,10 +469,10 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "YuE2Studio/1.0"
     cfg = load_config()
 
-    def log_message(self, fmt, *args):  # silencio
+    def log_message(self, fmt, *args):  # stay quiet
         pass
 
-    # --- utilidades
+    # --- helpers
     def send_json(self, data, code=200):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -509,7 +509,7 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             index = STUDIO_DIR / "ui" / "index.html"
             if not index.is_file():
-                return self.send_json({"error": "falta ui/index.html"}, 500)
+                return self.send_json({"error": "ui/index.html is missing"}, 500)
             return self.send_bytes(index.read_bytes(), "text/html; charset=utf-8")
         if path == "/api/health":
             return self.send_json(self.health())
@@ -521,7 +521,7 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/jobs/"):
             job = JOBS.get(path.split("/")[3])
             if not job:
-                return self.send_json({"error": "job desconocido"}, 404)
+                return self.send_json({"error": "unknown job"}, 404)
             return self.send_json(self.public_job(job))
         if path == "/api/library":
             return self.send_json({"songs": library(project), "inputs": self.inputs(project)})
@@ -530,11 +530,11 @@ class Handler(BaseHTTPRequestHandler):
             rel = (query.get("path") or [""])[0]
             target = (project / rel).resolve()
             if not inside(project, target) or not target.is_file():
-                return self.send_json({"error": "archivo invalido"}, 400)
+                return self.send_json({"error": "invalid file"}, 400)
             return self.send_bytes(target.read_bytes(), "text/plain; charset=utf-8")
         if path.startswith("/files/"):
             return self.serve_file(project, path[len("/files/"):])
-        return self.send_json({"error": "no encontrado"}, 404)
+        return self.send_json({"error": "not found"}, 404)
 
     # --- POST
     def do_POST(self):
@@ -565,13 +565,13 @@ class Handler(BaseHTTPRequestHandler):
                 target = inputs / f"{stem}{suffix}"
                 data = self.read_body()
                 if not data:
-                    return self.send_json({"error": "cuerpo vacio"}, 400)
+                    return self.send_json({"error": "empty body"}, 400)
                 target.write_bytes(data)
                 return self.send_json({"path": str(target), "name": target.name, "bytes": len(data)})
             if path.startswith("/api/jobs/") and path.endswith("/cancel"):
                 job = JOBS.get(path.split("/")[3])
                 if not job:
-                    return self.send_json({"error": "job desconocido"}, 404)
+                    return self.send_json({"error": "unknown job"}, 404)
                 return self.send_json({"cancelled": cancel_job(job)})
             if path.startswith("/api/library/"):
                 parts = path.split("/")
@@ -581,19 +581,19 @@ class Handler(BaseHTTPRequestHandler):
                 if len(parts) == 5 and parts[4] == "reveal":
                     target = project_dir(self.cfg) / "outputs" / name
                     if not inside(project_dir(self.cfg) / "outputs", target):
-                        return self.send_json({"error": "ruta invalida"}, 400)
+                        return self.send_json({"error": "invalid path"}, 400)
                     subprocess.Popen(["open", "-R", str(target)])
                     return self.send_json({"ok": True})
             if path == "/api/config":
                 self.cfg = save_config(self.json_body())
                 return self.send_json(self.cfg)
             if path == "/api/reveal":
-                return self.send_json({"ok": False, "error": "no soportado"})
+                return self.send_json({"ok": False, "error": "not supported"})
         except ValueError as exc:
             return self.send_json({"error": str(exc)}, 400)
         except Exception as exc:
             return self.send_json({"error": f"{type(exc).__name__}: {exc}"}, 500)
-        return self.send_json({"error": "no encontrado"}, 404)
+        return self.send_json({"error": "not found"}, 404)
 
     # --- DELETE
     def do_DELETE(self):
@@ -603,16 +603,16 @@ class Handler(BaseHTTPRequestHandler):
             project = project_dir(self.cfg)
             target = project / "outputs" / name
             if not inside(project / "outputs", target) or not target.is_dir():
-                return self.send_json({"error": "cancion invalida"}, 400)
+                return self.send_json({"error": "invalid song"}, 400)
             shutil.rmtree(target)
             for suffix in (".resources.json", ".resources.jsonl"):
                 stale = project / "outputs" / f"{name}{suffix}"
                 if stale.is_file():
                     stale.unlink()
             return self.send_json({"deleted": name})
-        return self.send_json({"error": "no encontrado"}, 404)
+        return self.send_json({"error": "not found"}, 404)
 
-    # --- helpers de respuesta
+    # --- response helpers
     def public_job(self, job: dict) -> dict:
         data = {k: v for k, v in job.items() if k not in ("proc", "cmd", "project")}
         data["log_tail"] = job["log"][-60:]
@@ -663,17 +663,17 @@ class Handler(BaseHTTPRequestHandler):
         project = project_dir(self.cfg)
         folder = project / "outputs" / name
         if not inside(project / "outputs", folder) or not folder.is_dir():
-            return self.send_json({"error": "cancion invalida"}, 400)
+            return self.send_json({"error": "invalid song"}, 400)
         artifact = artifact_dir(folder)
         source = artifact / "audio.flac"
         if not source.is_file():
-            return self.send_json({"error": "no hay audio.flac"}, 400)
+            return self.send_json({"error": "no audio.flac found"}, 400)
         target = artifact / "audio.mp3"
         cmd = [ffmpeg_binary(), "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
                "-c:a", "libmp3lame", "-b:a", "320k", str(target)]
         done = subprocess.run(cmd, capture_output=True, text=True)
         if done.returncode != 0 or not target.is_file():
-            return self.send_json({"error": f"ffmpeg fallo: {done.stderr[:200]}"}, 500)
+            return self.send_json({"error": f"ffmpeg failed: {done.stderr[:200]}"}, 500)
         return self.send_json({"mp3": "/files/" + target.relative_to(project).as_posix(),
                                "bytes": target.stat().st_size})
 
@@ -682,7 +682,7 @@ class Handler(BaseHTTPRequestHandler):
         target = (project / rel).resolve()
         allowed = [project / "outputs", project / "inputs", project / "models"]
         if not any(inside(root, target) for root in allowed) or not target.is_file():
-            return self.send_json({"error": "archivo invalido"}, 404)
+            return self.send_json({"error": "invalid file"}, 404)
         ctype = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
         size = target.stat().st_size
         start, end = 0, size - 1
