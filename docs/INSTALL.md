@@ -5,7 +5,7 @@ Dos caminos: el instalador (recomendado) o el paso a paso manual.
 ## Rápido
 
 ```bash
-git clone https://github.com/<usuario>/yue2-studio.git
+git clone https://github.com/stavitian/yue2-studio.git
 cd yue2-studio
 bash install.sh                        # motor + app
 bash install.sh --with-transcribe      # + transcripción y covers (+2.6 GB)

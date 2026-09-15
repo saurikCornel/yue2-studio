@@ -41,7 +41,7 @@ Medido en MacBook Pro M5 Pro / 24 GB / macOS 27:
 ## Instalar
 
 ```bash
-git clone https://github.com/<usuario>/yue2-studio.git
+git clone https://github.com/stavitian/yue2-studio.git
 cd yue2-studio
 bash install.sh                    # + --with-transcribe para covers (+2.6 GB)
 open "$HOME/Applications/YuE2 Studio.app"

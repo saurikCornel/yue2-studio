@@ -45,7 +45,7 @@ Measured on a MacBook Pro M5 Pro / 24 GB / macOS 27:
 ## Install
 
 ```bash
-git clone https://github.com/<you>/yue2-studio.git
+git clone https://github.com/stavitian/yue2-studio.git
 cd yue2-studio
 bash install.sh                 # add --with-transcribe for covers (+2.6 GB)
 ```
