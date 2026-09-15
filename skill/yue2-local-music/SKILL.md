@@ -75,6 +75,13 @@ config lives in `config.json` (project, vae_core_frames, precision, memory_budge
 
 The UI fixes the transcribe button at `max_seconds: 180`; the API/CLI take the whole file.
 
+Cover artifacts sit one level down (`<output>/song/audio.flac`), so any UI code must use the
+`audio_url` / `abc_url` / `mp3_url` the job result already computes through `artifact_dir()`. A
+hardcoded `/files/outputs/<name>/audio.flac` 404s for covers and the player fails silently while
+Reveal in Finder still works — a web UI callback that keeps the job object from the POST (state
+`queued`, no `result`) instead of the polled one hits exactly that. Every finished run that has a
+FLAC also gets a 320 kbps `audio.mp3` next to it (`ensure_mp3()` in `server.py`).
+
 ### ffmpeg and the GUI PATH (transcription dies, generation works)
 
 A `.app` opened from the Finder or the Dock inherits launchd's minimal `PATH`
