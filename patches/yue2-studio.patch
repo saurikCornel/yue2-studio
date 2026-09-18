@@ -1,5 +1,5 @@
 diff --git a/src/lyra/measure.py b/src/lyra/measure.py
-index ea189aa..8257442 100644
+index ea189aa..fef1fd5 100644
 --- a/src/lyra/measure.py
 +++ b/src/lyra/measure.py
 @@ -280,6 +280,8 @@ class GPUExecution:
@@ -11,29 +11,53 @@ index ea189aa..8257442 100644
          self._entered = False
          self._baseline = None
          path = None if resource_path is None else Path(resource_path)
-@@ -303,9 +305,17 @@ class GPUExecution:
-                               f"{self.memory_budget_gib:g} GiB budget")
+@@ -299,18 +301,27 @@ class GPUExecution:
+             self._baseline = sample
+         footprint = sample["physical_footprint_bytes"]
+         if footprint > self.memory_budget_gib * _GIB:
+-            raise MemoryError(f"Process footprint {footprint / _GIB:.2f} GiB exceeds "
+-                              f"{self.memory_budget_gib:g} GiB budget")
++            # YuE2 Studio patch: footprint abort disabled — log only (busy 32 GB Macs false-trigger)
++            self.monitor.metadata["footprint_over_budget"] = True
++            self.monitor.metadata["footprint_gib"] = round(footprint / _GIB, 2)
          pressure = sample["system_memory_pressure_level"]
          if pressure != 1:
 -            raise MemoryError(f"System memory pressure is not normal (level={pressure})")
 -        if sample["system_available_bytes"] < 2 * _GIB:
 -            raise MemoryError("Less than 2 GiB of available system memory remains")
-+            # YuE2 Studio patch: en Apple Silicon macOS marca nivel 2 de forma transitoria
-+            # mientras comprime el burst de carga de pesos (visto: 1 sample de
-+            # 0.25 s con 6 GiB disponibles). Se tolera mientras haya
-+            # min_available_gib libres; el presupuesto de footprint y el swap
-+            # siguen estrictos. Configurable con YUE2_MIN_AVAILABLE_GIB.
++            # YuE2 Studio patch: on Apple Silicon macOS reports level 2 transiently while it
++            # compresses the burst of loading the weights (observed: one 0.25 s sample
++            # with 6 GiB available). Never aborts; recorded in metadata. Configure with
++            # YUE2_MIN_AVAILABLE_GIB for the soft available floor warning.
 +            if sample["system_available_bytes"] < self.min_available_gib * _GIB:
-+                raise MemoryError(f"System memory pressure is not normal (level={pressure})")
++                self.monitor.metadata["pressure_warning_level"] = pressure
 +            self.monitor.metadata["transient_pressure_warnings"] = (
 +                self.monitor.metadata.get("transient_pressure_warnings", 0) + 1)
 +        if sample["system_available_bytes"] < self.min_available_gib * _GIB:
-+            raise MemoryError(f"Less than {self.min_available_gib:g} GiB of available system memory remains")
++            self.monitor.metadata["low_available_warning"] = True
++        # YuE2 Studio patch: swap abort disabled — log only
          swapped = sample["system_swap_out_bytes"] - self._baseline["system_swap_out_bytes"]
          growth = sample["system_swap_used_bytes"] - self._baseline["system_swap_used_bytes"]
-         if swapped > 64 * _MIB or growth > 128 * _MIB:
+-        if swapped > 64 * _MIB or growth > 128 * _MIB:
+-            raise MemoryError(f"Stopping GPU workload after new swapping: "
+-                              f"{swapped / _MIB:.1f} MiB out, {growth / _MIB:.1f} MiB used growth")
++        if swapped > 0 or growth > 0:
++            self.monitor.metadata["swap_out_mib"] = round(swapped / _MIB, 1)
++            self.monitor.metadata["swap_growth_mib"] = round(growth / _MIB, 1)
+ 
+     def _apply_limits(self):
+         global _FP32_PRECISION_VERIFIED
+@@ -325,7 +336,7 @@ class GPUExecution:
+                 raise RuntimeError("MLX Metal is required; CPU fallback is not supported")
+             mx.set_default_device(mx.gpu)
+             self.monitor.metadata["mlx_default_device"] = str(mx.default_device())
+-            mx.set_memory_limit(int((budget - 5) * _GIB))
++            mx.set_memory_limit(int(max(budget - 2, budget * 0.9) * _GIB))  # YuE2 Studio: less aggressive Metal cap
+             mx.set_cache_limit(128 * _MIB)
+             self.monitor.metadata["mlx_advisory_memory_limit_bytes"] = int((budget - 5) * _GIB)
+             self.monitor.metadata["mlx_cache_limit_bytes"] = 128 * _MIB
 diff --git a/src/lyra/music_tools/transcribe.py b/src/lyra/music_tools/transcribe.py
-index c562991..d9ccfd8 100644
+index c562991..e0c0555 100644
 --- a/src/lyra/music_tools/transcribe.py
 +++ b/src/lyra/music_tools/transcribe.py
 @@ -35,7 +35,17 @@ def main():
@@ -41,8 +65,8 @@ index c562991..d9ccfd8 100644
      parser.add_argument('--preset', choices=('default', 'paper'), default='default')
      parser.add_argument('--max-seconds', type=float)
 -    parser.add_argument('--memory-budget-gib', type=float, default=24)
-+    # YuE2 Studio patch: el default 24 de upstream viola el chequeo del guard
-+    # (exige budget <= RAM total - 4) en máquinas de 24 GB. Se calcula desde la RAM.
++    # YuE2 Studio patch: upstream's default of 24 violates the guard check
++    # (budget <= total RAM - 4) on 24 GB machines. Computed from RAM instead.
 +    def default_budget():
 +        try:
 +            import psutil

@@ -6,8 +6,9 @@ Both patches target machines with 24 GB of unified memory:
   1. src/lyra/measure.py — the memory guard aborts on any memory-pressure reading other
      than "normal", and macOS reports a transient warning (level 2) while it compresses
      the 3 GiB burst of loading the weights, even with GiBs still available. The patch
-     tolerates level 2 while at least YUE2_MIN_AVAILABLE_GIB (1 by default) is free, and
-     keeps the footprint budget and the swap checks strict.
+     tolerates level 2 while at least YUE2_MIN_AVAILABLE_GIB (1 by default) is free,
+     and disables footprint / available / swap aborts (they still log into metadata).
+     Busy 32 GB Macs were falsely killed by swap growth while loading weights.
      Configurable:  YUE2_MIN_AVAILABLE_GIB=2 ./install.sh
 
   2. src/lyra/music_tools/transcribe.py — the `transcribe` helper defaults
@@ -30,26 +31,45 @@ from pathlib import Path
 
 MARKER = "YuE2 Studio patch"
 
-MEASURE_OLD = '''        pressure = sample["system_memory_pressure_level"]
+MEASURE_OLD = '''        footprint = sample["physical_footprint_bytes"]
+        if footprint > self.memory_budget_gib * _GIB:
+            raise MemoryError(f"Process footprint {footprint / _GIB:.2f} GiB exceeds "
+                              f"{self.memory_budget_gib:g} GiB budget")
+        pressure = sample["system_memory_pressure_level"]
         if pressure != 1:
             raise MemoryError(f"System memory pressure is not normal (level={pressure})")
         if sample["system_available_bytes"] < 2 * _GIB:
             raise MemoryError("Less than 2 GiB of available system memory remains")
+        swapped = sample["system_swap_out_bytes"] - self._baseline["system_swap_out_bytes"]
+        growth = sample["system_swap_used_bytes"] - self._baseline["system_swap_used_bytes"]
+        if swapped > 64 * _MIB or growth > 128 * _MIB:
+            raise MemoryError(f"Stopping GPU workload after new swapping: "
+                              f"{swapped / _MIB:.1f} MiB out, {growth / _MIB:.1f} MiB used growth")
 '''
 
-MEASURE_NEW = '''        pressure = sample["system_memory_pressure_level"]
+MEASURE_NEW = '''        footprint = sample["physical_footprint_bytes"]
+        if footprint > self.memory_budget_gib * _GIB:
+            # {marker}: footprint abort disabled — log only (busy 32 GB Macs false-trigger)
+            self.monitor.metadata["footprint_over_budget"] = True
+            self.monitor.metadata["footprint_gib"] = round(footprint / _GIB, 2)
+        pressure = sample["system_memory_pressure_level"]
         if pressure != 1:
             # {marker}: on Apple Silicon macOS reports level 2 transiently while it
             # compresses the burst of loading the weights (observed: one 0.25 s sample
-            # with 6 GiB available). Tolerated while min_available_gib is free; the
-            # footprint budget and the swap checks stay strict. Configure with
-            # YUE2_MIN_AVAILABLE_GIB.
+            # with 6 GiB available). Never aborts; recorded in metadata. Configure with
+            # YUE2_MIN_AVAILABLE_GIB for the soft available floor warning.
             if sample["system_available_bytes"] < self.min_available_gib * _GIB:
-                raise MemoryError(f"System memory pressure is not normal (level={{pressure}})")
+                self.monitor.metadata["pressure_warning_level"] = pressure
             self.monitor.metadata["transient_pressure_warnings"] = (
                 self.monitor.metadata.get("transient_pressure_warnings", 0) + 1)
         if sample["system_available_bytes"] < self.min_available_gib * _GIB:
-            raise MemoryError(f"Less than {{self.min_available_gib:g}} GiB of available system memory remains")
+            self.monitor.metadata["low_available_warning"] = True
+        # {marker}: swap abort disabled — log only
+        swapped = sample["system_swap_out_bytes"] - self._baseline["system_swap_out_bytes"]
+        growth = sample["system_swap_used_bytes"] - self._baseline["system_swap_used_bytes"]
+        if swapped > 0 or growth > 0:
+            self.monitor.metadata["swap_out_mib"] = round(swapped / _MIB, 1)
+            self.monitor.metadata["swap_growth_mib"] = round(growth / _MIB, 1)
 '''.format(marker=MARKER)
 
 MEASURE_INIT_OLD = '''        self.backend, self.memory_budget_gib = backend, float(memory_budget_gib)
@@ -74,11 +94,15 @@ TRANSCRIBE_NEW = '''    # {marker}: upstream's default of 24 violates the guard 
 
     parser.add_argument('--memory-budget-gib', type=float, default=default_budget())'''.format(marker=MARKER)
 
+
+MLX_LIMIT_OLD = "            mx.set_memory_limit(int((budget - 5) * _GIB))"
+MLX_LIMIT_NEW = "            mx.set_memory_limit(int(max(budget - 2, budget * 0.9) * _GIB))  # YuE2 Studio: less aggressive Metal cap"
+
 PATCHES = [
     {
-        "name": "tolerant memory guard (24 GB)",
+        "name": "non-aborting memory guard (24/32 GB)",
         "path": "src/lyra/measure.py",
-        "edits": (("init", MEASURE_INIT_OLD, MEASURE_INIT_NEW), ("check", MEASURE_OLD, MEASURE_NEW)),
+        "edits": (("init", MEASURE_INIT_OLD, MEASURE_INIT_NEW), ("check", MEASURE_OLD, MEASURE_NEW), ("mlx_limit", MLX_LIMIT_OLD, MLX_LIMIT_NEW)),
     },
     {
         "name": "RAM-based transcription budget",

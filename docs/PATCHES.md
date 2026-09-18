@@ -10,7 +10,7 @@ python3 patches/apply_patches.py --project ~/Projects/mlx-Yue --check   # report
 python3 patches/apply_patches.py --project ~/Projects/mlx-Yue --revert  # restore upstream
 ```
 
-With 32 GB or more you do not need them: upstream works untouched.
+Upstream may work on a quiet 32 GB+ machine; this fork still applies the patches so a busy Mac (IDE, browsers, VMs) does not get false MemoryError kills.
 
 ---
 
@@ -45,8 +45,9 @@ tolerated warning is counted in the resource report as
 `metadata.transient_pressure_warnings`. The availability floor moves from 2 GiB to the same
 value.
 
-**What does not change.** Still strict: process footprint above the budget (16 GiB by
-default), swap growth (>64 MiB out or >128 MiB used) and the one-GPU-job-per-process lock.
+**What also changes (Studio fork).** Footprint, available-RAM and swap aborts are
+disabled: they only write into `monitor.metadata`. On busy 32 GB Macs, macOS swap growth
+while loading weights was falsely killing runs. The one-GPU-job-per-process lock stays.
 
 **Measured with the patch** (200.7 s song, `--precision 8bit`, 32 steps): 2 samples at level 2
 out of 1344, minimum available 4.64 GiB, **0 bytes of swap**, peak footprint 10.40 GiB.
